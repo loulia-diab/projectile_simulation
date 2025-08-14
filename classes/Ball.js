@@ -9,8 +9,6 @@ class Ball {
     this.mesh.position.set(x, y, z);
      //   this.mesh.add(new THREE.AxesHelper(200)); // 🔥 أضف المحاور هنا
         this.axesHelper = new THREE.AxesHelper(100);
-
-
  
   }
 
