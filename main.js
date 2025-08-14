@@ -6,14 +6,15 @@ import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
 import loadWaterTextures from "./src/config/WaterTextures";
 
-//import { loadModels } from "./src/config/Models.js";
+import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Variables
-let intersectObjects = [];
+const intersectObjects = [];
+const movingTargets = []; // نخزن فيه الأهداف المتحركة
 
 // Textures
 const textureLoader = new THREE.TextureLoader();
@@ -55,7 +56,7 @@ scene.add(Meshfloor);
 
 // سطح السفينة الخشبي
 const deck = new THREE.Mesh(
-  new THREE.PlaneGeometry(1000, 600, 10, 10),
+  new THREE.PlaneGeometry(600, 1000, 10, 10),
   new THREE.MeshStandardMaterial({
     map: woodTextures.woodColorTexture,
     aoMap: woodTextures.woodAmbientOcclusionTexture,
@@ -97,25 +98,25 @@ wallMaterial.map.wrapS = THREE.RepeatWrapping;
 wallMaterial.map.wrapT = THREE.RepeatWrapping;
 
 const frontWall = new THREE.Mesh(
-  new THREE.BoxGeometry(1000, wallHeight, wallThickness),
+  new THREE.BoxGeometry(600, wallHeight, wallThickness),
   wallMaterial
 );
-frontWall.position.set(0, wallHeight / 2, -300);
+frontWall.position.set(0, wallHeight / 2, -500);
 scene.add(frontWall);
 
 const backWall = frontWall.clone();
-backWall.position.set(0, wallHeight / 2, 300);
+backWall.position.set(0, wallHeight / 2, 500);
 scene.add(backWall);
 
 const leftWall = new THREE.Mesh(
-  new THREE.BoxGeometry(wallThickness, wallHeight, 600),
+  new THREE.BoxGeometry(wallThickness, wallHeight, 1000),
   wallMaterial
 );
-leftWall.position.set(-500, wallHeight / 2, 0);
+leftWall.position.set(-300, wallHeight / 2, 0);
 scene.add(leftWall);
 
 const rightWall = leftWall.clone();
-rightWall.position.set(500, wallHeight / 2, 0);
+rightWall.position.set(300, wallHeight / 2, 0);
 scene.add(rightWall);
 
 
@@ -139,6 +140,9 @@ grassroughnessTexture.wrapT = THREE.RepeatWrapping;
 DisplacementTexture.wrapT = THREE.RepeatWrapping;
 */
 
+// Models
+const gltfLoader = new GLTFLoader();
+loadModels(scene, gltfLoader, intersectObjects, movingTargets);
 
 // Lights
 
@@ -184,9 +188,9 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.x = -470;
+camera.position.x = 0;
 camera.position.y = 30;
-camera.position.z = 0;
+camera.position.z = 480;
 scene.add(camera);
 
 // Controls
@@ -272,6 +276,22 @@ let oldElapsedTime = 0;
 
 function animate() {
   requestAnimationFrame(animate);
+
+  // تحريك الأهداف
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.direction * target.userData.speed;
+/*
+    if (target.position.x > target.userData.startX + target.userData.range) {
+      target.userData.direction = -1;
+    } else if (target.position.x < target.userData.startX - target.userData.range) {
+      target.userData.direction = 1;
+    }*/
+     if (target.position.x > 150) {
+      target.userData.direction = -1;
+    } else if (target.position.x < -150) {
+      target.userData.direction = 1;
+    }
+  });
 
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
