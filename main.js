@@ -73,7 +73,7 @@ scene.add(deck);
 // الماء حول السفينة
 
 const water = new THREE.Mesh(
-  new THREE.PlaneGeometry(3000, 3000, 10, 10),
+  new THREE.PlaneGeometry(4000, 4000, 10, 10),
   new THREE.MeshStandardMaterial({
     map: waterTextures.waterColorTexture,
     normalMap: waterTextures.waterNormalTexture,
@@ -189,8 +189,8 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 camera.position.x = 0;
-camera.position.y = 30;
-camera.position.z = 480;
+camera.position.y = 40;
+camera.position.z = 490;
 scene.add(camera);
 
 // Controls

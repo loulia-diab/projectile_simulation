@@ -56,6 +56,47 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       intersectObjects.push(barrelClone);
     });
         
+    });
+    gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
+        console.log(gltfModel.scene);
+        const model = gltfModel.scene;
+  model.traverse((node) => {
+    if (node.isMesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
+
+  // تصغير/تكبير
+  model.scale.set(70, 70, 70);
+
+  // تحريك للمركز
+        model.position.set(-700, -0, -300);
+        model.rotation.y = -Math.PI /2;
+
+  scene.add(model);
+/*
+         gltfModel.scene.traverse(function (node) {
+      if (node instanceof THREE.Mesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+      }
+    });
+    gltfModel.scene.scale.set(0.1, 0.1, 0.1);
+    
+    const positions = [
+      { x: -300, y: 0, z: 200 },
+      { x: 400, y: 0, z: 400 },
+      { x: 0, y: 0, z: 300 }
+    ];
+
+    positions.forEach((pos) => {
+      const shipClone = gltfModel.scene.clone();
+      shipClone.position.set(pos.x, pos.y, pos.z);
+      scene.add(shipClone);
+     
+    });
+        */
   });
   // باقي تحميل الموديلات الأخرى...
 };
