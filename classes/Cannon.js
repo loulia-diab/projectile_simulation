@@ -1,8 +1,11 @@
 // Cannon.js
+
+// classes/Cannon.js
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import Ball from "./Ball";
-
+import gsap from "gsap";
+import Ball from "../physics/ball.js";
+import vector from "../physics/vector.js";
 class Cannon {
   constructor(scene) {
     this.scene = scene;
@@ -152,3 +155,125 @@ if (this.modelBall) {
 }
 
 export default Cannon;
+
+/*
+// classes/physics/cannon.js
+// classes/Cannon.js
+import * as THREE from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+// ✅ تم تصحيح المسارات واستيراد فئة Ball
+import Vector from "./physics/vector"; 
+import World from "./physics/world"; 
+import Ball from "./physics/ball";
+
+export default class Cannon {
+  constructor(scene, world) {
+    this.scene = scene;
+    this.world = world;
+
+    this.body = null;
+    this.barrel = null;
+
+    this.loaded = false;
+
+    this.xRot = 0;
+    this.yRot = 0;
+
+    this.loadModels();
+    
+    // إضافة مستمعي الأحداث هنا
+    document.addEventListener("mousemove", (event) => {
+      // قم بتحديث xRot و yRot بناءً على حركة الماوس
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === ' ' || event.key === 'Spacebar') {
+        this.fire();
+      }
+    });
+  }
+
+  async loadModels() {
+    const objLoader = new OBJLoader();
+    const gltfLoader = new GLTFLoader(); // لم يتم استخدامه
+    
+    try {
+      // تحميل جسم المدفع
+      const bodyObj = await objLoader.loadAsync("cannon_body.obj");
+      // ✅ تم تعديل هذا السطر لضمان تعيين الكائن حتى لو لم يكن لديه children
+      this.body = bodyObj.children.length > 0 ? bodyObj.children[0] : bodyObj;
+      if (this.body) {
+        this.body.scale.set(0.1, 0.1, 0.1);
+        this.body.position.set(0, 3, 0);
+        this.body.castShadow = true;
+        this.body.receiveShadow = true;
+      }
+
+      // تحميل ماسورة المدفع
+      const barrelObj = await objLoader.loadAsync("cannon_barrel.obj");
+      // ✅ تم تعديل هذا السطر لضمان تعيين الكائن حتى لو لم يكن لديه children
+      this.barrel = barrelObj.children.length > 0 ? barrelObj.children[0] : barrelObj;
+      if (this.barrel) {
+        this.barrel.scale.set(0.1, 0.1, 0.1);
+        this.barrel.position.set(0, 3, 0);
+        this.barrel.castShadow = true;
+        this.barrel.receiveShadow = true;
+      }
+      
+      if (this.body) this.scene.add(this.body);
+      if (this.barrel) this.scene.add(this.barrel);
+      
+      this.loaded = true;
+      console.log("Cannon models loaded successfully.");
+    } catch (error) {
+      console.error("Error loading cannon models:", error);
+    }
+  }
+
+  setAngle(xRot, yRot) {
+    if (!this.loaded || !this.barrel) return;
+
+    this.xRot = xRot;
+    this.yRot = yRot;
+    
+    // تطبيق الدوران على ماسورة المدفع
+    this.barrel.rotation.set(xRot, yRot, 0);
+  }
+
+  fire() {
+    if (!this.loaded || !this.barrel) return;
+
+    // حساب سرعة وزوايا الإطلاق
+    const speed = 25; // سرعة الإطلاق
+    const angleXY = this.xRot;
+    const angleXZ = this.yRot;
+    
+    const barrelWorldPosition = new THREE.Vector3();
+    this.barrel.getWorldPosition(barrelWorldPosition);
+
+    // ✅ تحديث استخدام الفئة Vector
+    const initialPosition = new Vector(
+      barrelWorldPosition.x,
+      barrelWorldPosition.y,
+      barrelWorldPosition.z
+    );
+
+    this.world.addBall(
+      initialPosition,
+      speed,
+      angleXY,
+      angleXZ,
+      1, // نصف القطر
+      1, // نوع الكرة (خشب)
+      null, // الكتلة
+      0.5, // معامل السحب
+      new Vector(0, 0, 0) // ✅ تحديث استخدام الفئة Vector
+    );
+  }
+}
+*/
+// classes/Cannon.js - النسخة المصححة والمطورة
+// تم تعديلها لتستقبل كائن محرك الفيزياء World
+// وتم إضافة دالة إطلاق الكرة (shoot)
+

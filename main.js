@@ -1,8 +1,9 @@
-import "./style.css";
+/*import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Cannon from './classes/Cannon';
-
+import World from './physics/world';
+import Ball from './physics/ball';
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -150,44 +151,199 @@ renderer.setClearColor("#4682B4"); // steel blue
 //اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
 scene.add(axesHelper);
-///////////////////////////////////
-window.onload = () => {
- const cannon = new Cannon(scene);
-if (cannon && cannon.isReady) {
-  console.log("Cannon position:", cannon.group.position);
-  if (cannon.ball) {
-    const ballWorldPos = new THREE.Vector3();
-    cannon.ball.mesh.getWorldPosition(ballWorldPos);
-    console.log("Ball world position:", ballWorldPos);
-  }
-}
+// ===================================================================
+// 7. منطق اللعبة (مدمج بدلاً من فئات منفصلة)
+// ===================================================================
 
+
+// Physics & Cannon
+const world = new World();
+const cannon = new Cannon(scene); // ✅ تمرير المشهد فقط كما في الكود الأصلي
+
+// Animation loop
 const clock = new THREE.Clock();
 let mixers = [];
-
 let oldElapsedTime = 0;
 
-function animate() {
-  requestAnimationFrame(animate);
+const animate = () => {
+    requestAnimationFrame(animate);
 
-  const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - oldElapsedTime;
-  oldElapsedTime = elapsedTime;
+    const elapsedTime = clock.getElapsedTime();
+    const deltaTime = elapsedTime - oldElapsedTime;
+    oldElapsedTime = elapsedTime;
 
-  // تحديث المدفع إذا كان جاهز
-   if (cannon && cannon.isReady) {
-    cannon.update();
-  }
+    if (cannon.isReady) {
+        cannon.update();
+    }
 
-  // تحديث الأنيميشن
-  mixers.forEach((mixer) => mixer.update(deltaTime));
+    world.update(deltaTime);
+    mixers.forEach((mixer) => mixer.update(deltaTime));
 
-  controls.update();
-  renderer.render(scene, camera);
-}
+    controls.update();
+    renderer.render(scene, camera);
+};
 
-animate();
-}
+// Events
+window.addEventListener("resize", () => {
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
+window.onload = () => {
+    animate();
+};
+
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
 
+*/
+// main.js - ملف رئيسي نظيف ومنظم
+// main.js - ملف رئيسي نظيف ومنظم
+//import "./styles.css";
+import * as THREE from "three";
+import gsap from "gsap";
+
+import GameManager from "./classes/GameManager.js";
+import SceneManager from "./classes/SceneManager.js";
+import GUIController from "./classes/GUIController.js";
+import World from "./physics/world.js";
+import Cannon from "./classes/Cannon.js";
+// ===================================================================
+// 1. تعريف متغيرات التطبيق الرئيسية
+// ===================================================================
+let isObjectLoaded = false;
+const clock = new THREE.Clock();
+const size = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
+const mouse = new THREE.Vector2();
+
+// Game Screen widgets
+const numberofBallsWidget = document.querySelector(".cannonBallsNumber");
+const scoreWidget = document.querySelector(".ScoreNumber");
+const targetWidget = document.querySelector(".targetNumbers");
+const gameFinshedLayout = document.querySelector(".gameFinshedLayout");
+const playAgain = document.querySelector(".playAgain");
+const loadingLayout = document.querySelector(".loadingLayout");
+const loadingBar = document.querySelector(".loadingBar");
+const screenInfo = document.querySelector(".screenInfo");
+
+let world, cannon, gameManager, sceneManager, guiController;
+let chasingCamera, camera;
+
+// ===================================================================
+// 2. دوال مساعدة
+// ===================================================================
+const updateCannon = () => {
+  if (cannon) {
+    cannon.updateAim(mouse);
+  }
+};
+
+const startGame = () => {
+  // تهيئة عالم الفيزياء والمدفع ومدير اللعبة
+  world = new World(9.8, 0, 15, 10, Math.PI / 2);
+  cannon = new Cannon(sceneManager.scene, world);
+  const widgets = { numberofBallsWidget, scoreWidget, targetWidget, gameFinshedLayout };
+  gameManager = new GameManager(sceneManager.scene, cannon, world, widgets);
+  guiController = new GUIController(world, cannon, gameManager);
+  
+  // تحديث GUI
+  guiController.updateBallParams(cannon.ball);
+  
+  // بدء حلقة الرسوم
+  tick();
+};
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  const delteTime = elapsedTime - clock.oldElapsedTime;
+  clock.oldElapsedTime = elapsedTime;
+
+  if (cannon && cannon.isReady) {
+    updateCannon();
+    cannon.update(delteTime);
+  }
+  
+  world.update(delteTime);
+  
+  // تحديث كاميرا التعقب إذا كانت مفعلة
+  if (cannon && cannon.isCameraChasing && cannon.objectsToUpdate.length > 0) {
+    const ball = cannon.objectsToUpdate[0].cannonBall;
+    sceneManager.chasingCamera.position.copy(
+      ball.position.clone().add(new THREE.Vector3(0, 0, 50))
+    );
+    sceneManager.chasingCamera.lookAt(ball.position);
+    sceneManager.renderer.render(sceneManager.scene, sceneManager.chasingCamera);
+  } else {
+    sceneManager.renderer.render(sceneManager.scene, sceneManager.camera);
+  }
+
+  requestAnimationFrame(tick);
+};
+
+// ===================================================================
+// 3. التحميل والتهيئة
+// ===================================================================
+const loadingManger = new THREE.LoadingManager(
+  () => {
+    gsap.delayedCall(0.5, () => {
+      gsap.to(sceneManager.overlay.material.uniforms.uAlpha, { duration: 3, value: 0 });
+      loadingBar.classList.add("ended");
+      loadingBar.style.transform = "";
+      screenInfo.classList.remove("hide");
+    });
+    isObjectLoaded = true;
+    startGame();
+  },
+  (itemUrl, itemsLoaded, itemsTotal) => {
+    loadingBar.style.transform = `scaleX(${itemsLoaded / itemsTotal})`;
+  }
+);
+
+sceneManager = new SceneManager(size, mouse, loadingManger);
+
+// Events
+window.addEventListener("click", () => {
+  if (isObjectLoaded && cannon) {
+    gameManager.handleShoot();
+  }
+});
+
+playAgain.addEventListener("mousedown", () => {
+  if (gameManager) {
+    gameManager.resetGame();
+  }
+});
+
+window.addEventListener("mousemove", (event) => {
+  mouse.x = event.pageX / size.width;
+  mouse.y = event.pageY / size.height;
+});
+
+window.addEventListener("keydown", (event) => {
+  if (cannon) {
+    if (event.code === "Digit2") {
+      cannon.isCameraChasing = true;
+    } else if (event.code === "Digit1") {
+      cannon.isCameraChasing = false;
+    }
+  }
+});
+
+window.addEventListener("resize", () => {
+  size.width = window.innerWidth;
+  size.height = window.innerHeight;
+  if (sceneManager) {
+    sceneManager.onResize(size);
+  }
+});
