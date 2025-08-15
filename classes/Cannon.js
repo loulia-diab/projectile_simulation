@@ -25,9 +25,9 @@ class Cannon {
     const loader = new GLTFLoader();
     loader.load("/static/models/cannon.glb", (gltf) => {
       this.group = gltf.scene;
-      this.group.rotation.y = Math.PI;  // توجيه المدفع نحو -Z
-      this.group.scale.set(0.5, 0.5, 0.5);
-      this.group.position.set(-380, 0, 0);
+      this.group.rotation.y = -Math.PI /2;  // توجيه المدفع نحو -Z
+      this.group.scale.set(0.6, 0.6, 0.6);
+      this.group.position.set(0, 0, 400);
 
 
       this.printChildrenRecursive(this.group);
