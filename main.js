@@ -5,15 +5,41 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //ا�
 import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
 import loadWaterTextures from "./src/config/WaterTextures";
+import gsap from "gsap";
+import World from "./physics/world.js";
+import Ball from "./physics/ball.js";
+import vector from "./physics/vector.js";
 
 //import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-// Canvas
-const canvas = document.querySelector("canvas.webgl");
 
-// Variables
-let intersectObjects = [];
+// =============================================================
+// Variables and Physics World
+// =============================================================
+const canvas = document.querySelector("canvas.webgl");
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+};
+const mouse = new THREE.Vector2();
+const scene = new THREE.Scene();
+const cannonDirection = new THREE.Vector3();
+const objectsToUpdate = [];
+let numberOfBalls = 20;
+let lastShotingTime = 0;
+let cannon;
+let isFinished = false;
+
+// Physics World
+const GRAVITY = 9.8;
+const HEIGHT = 100;
+const TEMPERETURE = 300;
+const WIND_SPEED = 20;
+const WIND_ANGLE = 90;
+const world = new World(GRAVITY, HEIGHT, TEMPERETURE, WIND_SPEED, WIND_ANGLE);
+
+
 
 // Textures
 const textureLoader = new THREE.TextureLoader();
@@ -34,8 +60,6 @@ const DisplacementTexture = textureLoader.load(
   "./textures/grass/Displacement.jpg"
 );
 */
-// Scene
-const scene = new THREE.Scene();
 
 /*
 const geometry = new THREE.CircleGeometry(2000, 2000);
@@ -157,11 +181,6 @@ scene.add(moonLight);
 
 
 //////////////////////////////////////////camera and resize  ////////////////////////////////////////////
-// Sizes
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
 /*
 window.onload = () => {
   // Update sizes
@@ -254,7 +273,7 @@ window.onload = () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
+/*
  const cannon = new Cannon(scene);
 if (cannon && cannon.isReady) {
   console.log("Cannon position:", cannon.group.position);
@@ -264,32 +283,132 @@ if (cannon && cannon.isReady) {
     console.log("Ball world position:", ballWorldPos);
   }
 }
+  // =============================================================
+// Main Game Logic inside window.onload
+// =============================================================
+window.onload = () => {
+    // Update sizes, camera, and renderer
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-const clock = new THREE.Clock();
-let mixers = [];
+    // Loader and Loading Manager (moved here as per your request)
+    */
+    const loadingManger = new THREE.LoadingManager(
+        () => {
+            gsap.delayedCall(0.5, () => {
+                // قم بإضافة عناصر شريط التحميل في HTML إذا لزم الأمر
+            });
+            startGame();
+        }
+    );
+    const gltfLoader = new GLTFLoader(loadingManger);
 
-let oldElapsedTime = 0;
+    // Load the cannon model
+    gltfLoader.load(
+        "static/models/cannon.glb",
+        (gltf) => {
+            cannon = new Cannon(gltf, scene);
+        },
+        undefined,
+        (error) => {
+            console.log("Failed to load cannon model:", error);
+        }
+    );
+    
+    // Event Listeners (moved here)
+    window.addEventListener("keydown", (e) => {
+        if (e.key === " ") {
+            const SHOOT_DELAY = 2000;
+            if (
+                cannon && cannon.isReady &&
+                window.performance.now() - lastShotingTime > SHOOT_DELAY
+            ) {
+                createCannonBall();
+                cannon.recoil();
+                lastShotingTime = window.performance.now();
+            }
+        }
+    });
 
-function animate() {
-  requestAnimationFrame(animate);
+    window.addEventListener('mousemove', (event) => {
+        mouse.x = (event.clientX / sizes.width) * 2 - 1;
+        mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+    });
 
-  const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - oldElapsedTime;
-  oldElapsedTime = elapsedTime;
+    // Shooting and Control Functions (moved here)
+    const createCannonBall = () => {
+        if (!cannon.isReady || numberOfBalls <= 0) return;
+        
+        const ballRadius = 2.5;
+        const ballMass = 10;
+        const ballSpeed = 100;
+        
+        let cannonBallMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(ballRadius, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xcccccc })
+        );
+        cannonBallMesh.castShadow = true;
+        
+        const initialPosition = cannon.getBallPosition();
+        cannonBallMesh.position.copy(initialPosition);
+        scene.add(cannonBallMesh);
+        
+        const angleXY = Math.atan2(cannonDirection.y, cannonDirection.x);
+        const angleXZ = Math.atan2(cannonDirection.z, Math.sqrt(cannonDirection.x * cannonDirection.x + cannonDirection.y * cannonDirection.y));
 
-  // تحديث المدفع إذا كان جاهز
-   if (cannon && cannon.isReady) {
-    cannon.update();
-  }
+        const physicsBall = new Ball(
+            new THREE.Vector3().copy(initialPosition), 
+            ballSpeed,
+            angleXY,
+            angleXZ,
+            ballRadius,
+            0, 
+            ballMass,
+            0.5, 
+            vector.create(0,0,0), 
+            0.4,
+            0.2
+        );
+        world.add(physicsBall); 
 
-  // تحديث الأنيميشن
-  mixers.forEach((mixer) => mixer.update(deltaTime));
+        objectsToUpdate.push({ cannonBall: cannonBallMesh, physicsBall });
+        cannon.createPlaceholderBall();
+        numberOfBalls--;
+        // update a UI element here if you have one
+    };
 
-  controls.update();
-  renderer.render(scene, camera);
-}
+    // Game Loop (moved here)
+    const clock = new THREE.Clock();
+    let oldElapsedTime = 0;
 
-animate();
-}
+    const tick = () => {
+        const elapsedTime = clock.getElapsedTime();
+        const deltaTime = elapsedTime - oldElapsedTime;
+        oldElapsedTime = elapsedTime;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+        world.update(deltaTime);
+
+        for (const object of objectsToUpdate) {
+            object.cannonBall.position.copy(object.physicsBall.position);
+        }
+        
+        if (cannon && cannon.isReady) {
+          //  cannon.rotateWithMouse(mouse.y, mouse.x);
+            cannonDirection.copy(cannon.getDirection());
+            cannon.update();
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+    };
+
+    // Start the game loop after all assets are loaded (moved here)
+    const startGame = () => {
+        tick();
+    };
+};

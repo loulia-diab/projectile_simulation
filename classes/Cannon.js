@@ -1,6 +1,7 @@
 // Cannon.js
 
 // classes/Cannon.js
+/*
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import gsap from "gsap";
@@ -155,125 +156,296 @@ if (this.modelBall) {
 }
 
 export default Cannon;
-
-/*
-// classes/physics/cannon.js
-// classes/Cannon.js
-import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-
-// ✅ تم تصحيح المسارات واستيراد فئة Ball
-import Vector from "./physics/vector"; 
-import World from "./physics/world"; 
-import Ball from "./physics/ball";
-
-export default class Cannon {
-  constructor(scene, world) {
-    this.scene = scene;
-    this.world = world;
-
-    this.body = null;
-    this.barrel = null;
-
-    this.loaded = false;
-
-    this.xRot = 0;
-    this.yRot = 0;
-
-    this.loadModels();
-    
-    // إضافة مستمعي الأحداث هنا
-    document.addEventListener("mousemove", (event) => {
-      // قم بتحديث xRot و yRot بناءً على حركة الماوس
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === ' ' || event.key === 'Spacebar') {
-        this.fire();
-      }
-    });
-  }
-
-  async loadModels() {
-    const objLoader = new OBJLoader();
-    const gltfLoader = new GLTFLoader(); // لم يتم استخدامه
-    
-    try {
-      // تحميل جسم المدفع
-      const bodyObj = await objLoader.loadAsync("cannon_body.obj");
-      // ✅ تم تعديل هذا السطر لضمان تعيين الكائن حتى لو لم يكن لديه children
-      this.body = bodyObj.children.length > 0 ? bodyObj.children[0] : bodyObj;
-      if (this.body) {
-        this.body.scale.set(0.1, 0.1, 0.1);
-        this.body.position.set(0, 3, 0);
-        this.body.castShadow = true;
-        this.body.receiveShadow = true;
-      }
-
-      // تحميل ماسورة المدفع
-      const barrelObj = await objLoader.loadAsync("cannon_barrel.obj");
-      // ✅ تم تعديل هذا السطر لضمان تعيين الكائن حتى لو لم يكن لديه children
-      this.barrel = barrelObj.children.length > 0 ? barrelObj.children[0] : barrelObj;
-      if (this.barrel) {
-        this.barrel.scale.set(0.1, 0.1, 0.1);
-        this.barrel.position.set(0, 3, 0);
-        this.barrel.castShadow = true;
-        this.barrel.receiveShadow = true;
-      }
-      
-      if (this.body) this.scene.add(this.body);
-      if (this.barrel) this.scene.add(this.barrel);
-      
-      this.loaded = true;
-      console.log("Cannon models loaded successfully.");
-    } catch (error) {
-      console.error("Error loading cannon models:", error);
-    }
-  }
-
-  setAngle(xRot, yRot) {
-    if (!this.loaded || !this.barrel) return;
-
-    this.xRot = xRot;
-    this.yRot = yRot;
-    
-    // تطبيق الدوران على ماسورة المدفع
-    this.barrel.rotation.set(xRot, yRot, 0);
-  }
-
-  fire() {
-    if (!this.loaded || !this.barrel) return;
-
-    // حساب سرعة وزوايا الإطلاق
-    const speed = 25; // سرعة الإطلاق
-    const angleXY = this.xRot;
-    const angleXZ = this.yRot;
-    
-    const barrelWorldPosition = new THREE.Vector3();
-    this.barrel.getWorldPosition(barrelWorldPosition);
-
-    // ✅ تحديث استخدام الفئة Vector
-    const initialPosition = new Vector(
-      barrelWorldPosition.x,
-      barrelWorldPosition.y,
-      barrelWorldPosition.z
-    );
-
-    this.world.addBall(
-      initialPosition,
-      speed,
-      angleXY,
-      angleXZ,
-      1, // نصف القطر
-      1, // نوع الكرة (خشب)
-      null, // الكتلة
-      0.5, // معامل السحب
-      new Vector(0, 0, 0) // ✅ تحديث استخدام الفئة Vector
-    );
-  }
-}
 */
-// classes/Cannon.js - النسخة المصححة والمطورة
-// تم تعديلها لتستقبل كائن محرك الفيزياء World
-// وتم إضافة دالة إطلاق الكرة (shoot)
+/*
+import * as THREE from "three";
+import gsap from "gsap";
 
+class Cannon {
+    constructor(gltf, scene) {
+        this.scene = scene;
+        this.isReady = false;
+
+        this.group = gltf.scene;
+        this.mesh = this.group.getObjectByName("Cannon_Cannon_0");
+        this.ballMesh = null;
+        this.speed = 0.5;
+        this.keys = {};
+
+        if (!this.mesh) {
+            console.error("Cannon barrel mesh not found in the GLTF model.");
+            return;
+        }
+
+        this.group.rotation.y = Math.PI;
+        this.group.scale.set(1.5, 1.5, 1.5);
+        this.group.position.set(-300, 10, 0);
+
+        this.group.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        this.createPlaceholderBall();
+        this.setupKeyboardControls();
+
+        // إضافة سهم توجيه مرئي لمساعدة التصحيح
+        // هذا السهم يوضح الاتجاه الذي تطلق فيه الفوهة
+        const dir = new THREE.Vector3(0, 0, -1);
+        const origin = new THREE.Vector3(0, 0, 0);
+        const length = 50;
+        const hex = 0xffff00;
+        this.arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
+        this.mesh.add(this.arrowHelper);
+
+        this.scene.add(this.group);
+        this.isReady = true;
+    }
+
+    createPlaceholderBall() {
+        if (this.ballMesh) {
+            this.mesh.remove(this.ballMesh);
+            this.ballMesh.geometry.dispose();
+            this.ballMesh.material.dispose();
+        }
+        
+        this.ballMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(5.5, 32, 32),
+            new THREE.MeshStandardMaterial({
+                color: 0x999999,
+            })
+        );
+        this.ballMesh.castShadow = true;
+        this.mesh.add(this.ballMesh);
+        // تم تعديل هذا السطر لوضع الطابة عند فوهة المدفع
+        this.ballMesh.position.set(0, 0, 30);
+    }
+
+    rotateWithMouse(mouseY, mouseX) {
+        if (!this.mesh) return;
+        this.mesh.rotation.y = -THREE.MathUtils.lerp(-Math.PI / 4, Math.PI / 4, (mouseX + 1) / 2);
+        this.mesh.rotation.x = -THREE.MathUtils.lerp(Math.PI / 8, Math.PI / 2, (mouseY + 1) / 2);
+    }
+
+    getDirection() {
+        if (!this.mesh) return new THREE.Vector3(0, 0, 1);
+        const direction = new THREE.Vector3();
+        this.mesh.getWorldDirection(direction);
+        return direction;
+    }
+
+    getBallPosition() {
+        if (!this.ballMesh) return new THREE.Vector3();
+        const worldPosition = new THREE.Vector3();
+        this.ballMesh.getWorldPosition(worldPosition);
+        return worldPosition;
+    }
+
+    recoil() {
+        if (!this.group) return;
+        const zPosition = this.group.position.z;
+        gsap.to(this.group.position, {
+            duration: 0.15,
+            z: zPosition + 15,
+            yoyo: true,
+            repeat: 1
+        });
+    }
+
+    setupKeyboardControls() {
+        document.addEventListener("keydown", (e) => {
+            this.keys[e.key.toLowerCase()] = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            this.keys[e.key.toLowerCase()] = false;
+        });
+    }
+
+    update() {
+        if (!this.isReady) return;
+
+        const direction = new THREE.Vector3();
+        this.group.getWorldDirection(direction);
+        direction.y = 0; // للحفاظ على الحركة على سطح السفينة
+
+        // Forward and backward movement (W, S)
+        if (this.keys["w"]) {
+            this.group.position.addScaledVector(direction, this.speed);
+        }
+        if (this.keys["s"]) {
+            this.group.position.addScaledVector(direction, -this.speed);
+        }
+
+        // Left and right movement (A, D)
+        const leftDirection = new THREE.Vector3(-direction.z, 0, direction.x);
+        if (this.keys["a"]) {
+            this.group.position.addScaledVector(leftDirection, this.speed);
+        }
+        if (this.keys["d"]) {
+            this.group.position.addScaledVector(leftDirection, -this.speed);
+        }
+    }
+}
+
+export default Cannon;
+*/
+/*
+    rotateWithMouse(mouseX, mouseY) {
+        if (!this.mesh) return;
+
+        // تعديل الدوران على المحور Y لتقييده بين -pi/4 و pi/4
+        const yawRotation = THREE.MathUtils.lerp(-Math.PI / 4, Math.PI / 4, (mouseX + 1) / 2);
+        
+        // تعديل الدوران على المحور X لتقييده بين pi/8 و pi/2
+        const pitchRotation = -THREE.MathUtils.lerp(Math.PI / 8, Math.PI / 2, (mouseY + 1) / 2);
+
+        this.mesh.rotation.y = yawRotation;
+        this.mesh.rotation.x = pitchRotation;
+    }
+*/import * as THREE from "three";
+import gsap from "gsap";
+
+class Cannon {
+    constructor(gltf, scene) {
+        this.scene = scene;
+        this.isReady = false;
+
+        this.group = gltf.scene;
+        // قم بتعديل هذا السطر ليتوافق مع اسم mesh الصحيح في نموذجك
+        this.mesh = this.group.getObjectByName("Cannon_Cannon_0");
+        this.ballMesh = null;
+        this.speed = 0.5;
+        this.rotationSpeed = 0.005; // سرعة دوران الفوهة
+        this.keys = {};
+
+        if (!this.mesh) {
+            console.error("Cannon barrel mesh not found in the GLTF model.");
+            return;
+        }
+
+        // ضبط موضع ودوران المدفع الأولي لجعله مستقيماً
+        // يتم تدوير المجموعة الكاملة لضمان وقوف المدفع بشكل مستقيم
+        this.group.rotation.set(-Math.PI, 0 , Math.PI);
+        this.group.scale.set(1.5, 1.5, 1.5);
+        this.group.position.set(-300, 10, 0);
+
+        this.group.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+
+        this.createPlaceholderBall();
+        this.setupKeyboardControls();
+
+        // إضافة سهم توجيه مرئي لمساعدة التصحيح
+        const dir = new THREE.Vector3(0, 0, -1);
+        const origin = new THREE.Vector3(0, 0, 0);
+        const length = 50;
+        const hex = 0xffff00;
+        this.arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
+        this.mesh.add(this.arrowHelper);
+
+        this.scene.add(this.group);
+        this.isReady = true;
+    }
+
+    createPlaceholderBall() {
+        if (this.ballMesh) {
+            this.mesh.remove(this.ballMesh);
+            this.ballMesh.geometry.dispose();
+            this.ballMesh.material.dispose();
+        }
+        
+        this.ballMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(5.5, 32, 32),
+            new THREE.MeshStandardMaterial({
+                color: 0x999999,
+            })
+        );
+        this.ballMesh.castShadow = true;
+        this.mesh.add(this.ballMesh);
+        // تم تعديل هذا السطر لوضع الطابة عند فوهة المدفع
+        this.ballMesh.position.set(0, 0, 30);
+    }
+
+    getDirection() {
+        if (!this.mesh) return new THREE.Vector3(0, 0, 1);
+        const direction = new THREE.Vector3();
+        this.mesh.getWorldDirection(direction);
+        return direction;
+    }
+
+    getBallPosition() {
+        if (!this.ballMesh) return new THREE.Vector3();
+        const worldPosition = new THREE.Vector3();
+        this.ballMesh.getWorldPosition(worldPosition);
+        return worldPosition;
+    }
+
+    recoil() {
+        if (!this.group) return;
+        const zPosition = this.group.position.z;
+        gsap.to(this.group.position, {
+            duration: 0.15,
+            z: zPosition + 15,
+            yoyo: true,
+            repeat: 1
+        });
+    }
+
+    setupKeyboardControls() {
+        document.addEventListener("keydown", (e) => {
+            this.keys[e.key] = true;
+        });
+        document.addEventListener("keyup", (e) => {
+            this.keys[e.key] = false;
+        });
+    }
+
+    update() {
+        if (!this.isReady) return;
+
+        // منطق دوران الفوهة باستخدام أزرار الأسهم
+        if (this.keys["ArrowUp"]) {
+            this.mesh.rotation.y += this.rotationSpeed;
+        }
+        if (this.keys["ArrowDown"]) {
+            this.mesh.rotation.y -= this.rotationSpeed;
+        }
+        if (this.keys["ArrowLeft"]) {
+            this.mesh.rotation.x += this.rotationSpeed;
+        }
+        if (this.keys["ArrowRight"]) {
+            this.mesh.rotation.x -= this.rotationSpeed;
+        }
+
+        const direction = new THREE.Vector3();
+        this.group.getWorldDirection(direction);
+        direction.y = 0; // للحفاظ على الحركة على سطح السفينة
+
+        // Forward and backward movement (W, S)
+        // تم عكس الاتجاه ليتوافق مع الدوران الأولي للمدفع
+        if (this.keys["a"]) {
+            this.group.position.addScaledVector(direction, -this.speed);
+        }
+        if (this.keys["d"]) {
+            this.group.position.addScaledVector(direction, this.speed);
+        }
+
+        // Left and right movement (A, D)
+        // تم تصحيح طريقة حساب المتجه الأيسر
+        const leftDirection = new THREE.Vector3(-direction.z, 0, direction.x);
+        if (this.keys["w"]) {
+            this.group.position.addScaledVector(leftDirection, this.speed);
+        }
+        if (this.keys["s"]) {
+            this.group.position.addScaledVector(leftDirection, -this.speed);
+        }
+    }
+}
+
+export default Cannon;
