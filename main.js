@@ -1,17 +1,27 @@
-/*import "./style.css";
+
+import "./style.css";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //اداة لتدوير وتحريك الكااميرا بالماوس
 import Cannon from './classes/Cannon';
-import World from './physics/world';
-import Ball from './physics/ball';
+import loadWoodTextures from "./src/config/WoodTextures";
+import loadWaterTextures from "./src/config/WaterTextures";
+
+//import { loadModels } from "./src/config/Models.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
+// Variables
+let intersectObjects = [];
+
 // Textures
 const textureLoader = new THREE.TextureLoader();
+const woodTextures = loadWoodTextures(textureLoader);
+const waterTextures = loadWaterTextures(textureLoader);
 
 // floor
+/*
 const grasscolorTexture = textureLoader.load("./textures/grass/color.jpg");
 const grassambientocculsionTexture = textureLoader.load(
   "./textures/grass/ambientOcclusion.jpg"
@@ -23,12 +33,12 @@ const grassnormalTexture = textureLoader.load("./textures/grass/normal.jpg");
 const DisplacementTexture = textureLoader.load(
   "./textures/grass/Displacement.jpg"
 );
-
+*/
 // Scene
 const scene = new THREE.Scene();
-const geometry = new THREE.CircleGeometry(20000, 20000);
 
-
+/*
+const geometry = new THREE.CircleGeometry(2000, 2000);
 const material = new THREE.MeshStandardMaterial({
   map: grasscolorTexture,
   aoMap: grassambientocculsionTexture,
@@ -41,7 +51,75 @@ const Meshfloor = new THREE.Mesh(geometry, material);
 Meshfloor.rotation.x = -Math.PI * 0.5;
 Meshfloor.position.y = 0;
 scene.add(Meshfloor);
+*/
 
+// سطح السفينة الخشبي
+const deck = new THREE.Mesh(
+  new THREE.PlaneGeometry(1000, 600, 10, 10),
+  new THREE.MeshStandardMaterial({
+    map: woodTextures.woodColorTexture,
+    aoMap: woodTextures.woodAmbientOcclusionTexture,
+    displacementMap: woodTextures.woodHeightTexture,
+    displacementScale: 0.2,
+    normalMap: woodTextures.woodNormalTexture,
+    roughnessMap: woodTextures.woodRoughnessTexture,
+  })
+);
+deck.rotation.x = -Math.PI / 2;
+deck.receiveShadow = true;
+scene.add(deck);
+
+// الماء حول السفينة
+
+const water = new THREE.Mesh(
+  new THREE.PlaneGeometry(3000, 3000, 10, 10),
+  new THREE.MeshStandardMaterial({
+    map: waterTextures.waterColorTexture,
+    normalMap: waterTextures.waterNormalTexture,
+    transparent: true,
+    opacity: 0.9,
+  })
+);
+water.rotation.x = -Math.PI / 2;
+water.position.y = -0.3; // تحت سطح السفينة قليلاً
+scene.add(water);
+
+// سور السفينة
+const wallHeight = 30;
+const wallThickness = 2;
+const wallMaterial = new THREE.MeshStandardMaterial({
+  map: woodTextures.woodColorTexture.clone(),
+  normalMap: woodTextures.woodNormalTexture.clone(),
+});
+
+wallMaterial.map.repeat.set(8, 0.5);
+wallMaterial.map.wrapS = THREE.RepeatWrapping;
+wallMaterial.map.wrapT = THREE.RepeatWrapping;
+
+const frontWall = new THREE.Mesh(
+  new THREE.BoxGeometry(1000, wallHeight, wallThickness),
+  wallMaterial
+);
+frontWall.position.set(0, wallHeight / 2, -300);
+scene.add(frontWall);
+
+const backWall = frontWall.clone();
+backWall.position.set(0, wallHeight / 2, 300);
+scene.add(backWall);
+
+const leftWall = new THREE.Mesh(
+  new THREE.BoxGeometry(wallThickness, wallHeight, 600),
+  wallMaterial
+);
+leftWall.position.set(-500, wallHeight / 2, 0);
+scene.add(leftWall);
+
+const rightWall = leftWall.clone();
+rightWall.position.set(500, wallHeight / 2, 0);
+scene.add(rightWall);
+
+
+/*
 grasscolorTexture.repeat.set(18000, 18000);
 grassambientocculsionTexture.repeat.set(18000, 18000);
 grassnormalTexture.repeat.set(18000, 18000);
@@ -59,6 +137,8 @@ grassambientocculsionTexture.wrapT = THREE.RepeatWrapping;
 grassnormalTexture.wrapT = THREE.RepeatWrapping;
 grassroughnessTexture.wrapT = THREE.RepeatWrapping;
 DisplacementTexture.wrapT = THREE.RepeatWrapping;
+*/
+
 
 // Lights
 
@@ -82,7 +162,7 @@ const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-
+/*
 window.onload = () => {
   // Update sizes
   sizes.width = window.innerWidth;
@@ -96,7 +176,7 @@ window.onload = () => {
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 };
-
+*/
 // Camera
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -104,9 +184,9 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.x = 15;
-camera.position.y = 10;
-camera.position.z = 70;
+camera.position.x = -470;
+camera.position.y = 30;
+camera.position.z = 0;
 scene.add(camera);
 
 // Controls
@@ -144,206 +224,72 @@ window.addEventListener("resize", () => {
 ////////////////////////////////////end camera and resize  ////////////////////////////////////////////
 
 
-renderer.setClearColor("#4682B4"); // steel blue
+//renderer.setClearColor("#4682B4"); // steel blue
+/*
+    Configure Scene
+*/
+//scene.fog = new THREE.Fog(0xcce0ff, 1300, 1600);
+const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_48d_partly_cloudy_puresky.png", () => {
+  const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
+  rt.fromEquirectangularTexture(renderer, texture);
+  scene.background = rt.texture;
+});
 
 
 ////////////////////////////////////  Model   ////////////////////////////////////////////////////////
 //اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
 scene.add(axesHelper);
-// ===================================================================
-// 7. منطق اللعبة (مدمج بدلاً من فئات منفصلة)
-// ===================================================================
+///////////////////////////////////
+window.onload = () => {
 
+   // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
-// Physics & Cannon
-const world = new World();
-const cannon = new Cannon(scene); // ✅ تمرير المشهد فقط كما في الكود الأصلي
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 
-// Animation loop
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+ const cannon = new Cannon(scene);
+if (cannon && cannon.isReady) {
+  console.log("Cannon position:", cannon.group.position);
+  if (cannon.ball) {
+    const ballWorldPos = new THREE.Vector3();
+    cannon.ball.mesh.getWorldPosition(ballWorldPos);
+    console.log("Ball world position:", ballWorldPos);
+  }
+}
+
 const clock = new THREE.Clock();
 let mixers = [];
+
 let oldElapsedTime = 0;
 
-const animate = () => {
-    requestAnimationFrame(animate);
+function animate() {
+  requestAnimationFrame(animate);
 
-    const elapsedTime = clock.getElapsedTime();
-    const deltaTime = elapsedTime - oldElapsedTime;
-    oldElapsedTime = elapsedTime;
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
 
-    if (cannon.isReady) {
-        cannon.update();
-    }
+  // تحديث المدفع إذا كان جاهز
+   if (cannon && cannon.isReady) {
+    cannon.update();
+  }
 
-    world.update(deltaTime);
-    mixers.forEach((mixer) => mixer.update(deltaTime));
+  // تحديث الأنيميشن
+  mixers.forEach((mixer) => mixer.update(deltaTime));
 
-    controls.update();
-    renderer.render(scene, camera);
-};
+  controls.update();
+  renderer.render(scene, camera);
+}
 
-// Events
-window.addEventListener("resize", () => {
-    sizes.width = window.innerWidth;
-    sizes.height = window.innerHeight;
-    camera.aspect = sizes.width / sizes.height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(sizes.width, sizes.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
-
-window.onload = () => {
-    animate();
-};
-
-
-
-
-
+animate();
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
-
-*/
-// main.js - ملف رئيسي نظيف ومنظم
-// main.js - ملف رئيسي نظيف ومنظم
-//import "./styles.css";
-import * as THREE from "three";
-import gsap from "gsap";
-
-import GameManager from "./classes/GameManager.js";
-import SceneManager from "./classes/SceneManager.js";
-import GUIController from "./classes/GUIController.js";
-import World from "./physics/world.js";
-import Cannon from "./classes/Cannon.js";
-// ===================================================================
-// 1. تعريف متغيرات التطبيق الرئيسية
-// ===================================================================
-let isObjectLoaded = false;
-const clock = new THREE.Clock();
-const size = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
-const mouse = new THREE.Vector2();
-
-// Game Screen widgets
-const numberofBallsWidget = document.querySelector(".cannonBallsNumber");
-const scoreWidget = document.querySelector(".ScoreNumber");
-const targetWidget = document.querySelector(".targetNumbers");
-const gameFinshedLayout = document.querySelector(".gameFinshedLayout");
-const playAgain = document.querySelector(".playAgain");
-const loadingLayout = document.querySelector(".loadingLayout");
-const loadingBar = document.querySelector(".loadingBar");
-const screenInfo = document.querySelector(".screenInfo");
-
-let world, cannon, gameManager, sceneManager, guiController;
-let chasingCamera, camera;
-
-// ===================================================================
-// 2. دوال مساعدة
-// ===================================================================
-const updateCannon = () => {
-  if (cannon) {
-    cannon.updateAim(mouse);
-  }
-};
-
-const startGame = () => {
-  // تهيئة عالم الفيزياء والمدفع ومدير اللعبة
-  world = new World(9.8, 0, 15, 10, Math.PI / 2);
-  cannon = new Cannon(sceneManager.scene, world);
-  const widgets = { numberofBallsWidget, scoreWidget, targetWidget, gameFinshedLayout };
-  gameManager = new GameManager(sceneManager.scene, cannon, world, widgets);
-  guiController = new GUIController(world, cannon, gameManager);
-  
-  // تحديث GUI
-  guiController.updateBallParams(cannon.ball);
-  
-  // بدء حلقة الرسوم
-  tick();
-};
-
-const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-  const delteTime = elapsedTime - clock.oldElapsedTime;
-  clock.oldElapsedTime = elapsedTime;
-
-  if (cannon && cannon.isReady) {
-    updateCannon();
-    cannon.update(delteTime);
-  }
-  
-  world.update(delteTime);
-  
-  // تحديث كاميرا التعقب إذا كانت مفعلة
-  if (cannon && cannon.isCameraChasing && cannon.objectsToUpdate.length > 0) {
-    const ball = cannon.objectsToUpdate[0].cannonBall;
-    sceneManager.chasingCamera.position.copy(
-      ball.position.clone().add(new THREE.Vector3(0, 0, 50))
-    );
-    sceneManager.chasingCamera.lookAt(ball.position);
-    sceneManager.renderer.render(sceneManager.scene, sceneManager.chasingCamera);
-  } else {
-    sceneManager.renderer.render(sceneManager.scene, sceneManager.camera);
-  }
-
-  requestAnimationFrame(tick);
-};
-
-// ===================================================================
-// 3. التحميل والتهيئة
-// ===================================================================
-const loadingManger = new THREE.LoadingManager(
-  () => {
-    gsap.delayedCall(0.5, () => {
-      gsap.to(sceneManager.overlay.material.uniforms.uAlpha, { duration: 3, value: 0 });
-      loadingBar.classList.add("ended");
-      loadingBar.style.transform = "";
-      screenInfo.classList.remove("hide");
-    });
-    isObjectLoaded = true;
-    startGame();
-  },
-  (itemUrl, itemsLoaded, itemsTotal) => {
-    loadingBar.style.transform = `scaleX(${itemsLoaded / itemsTotal})`;
-  }
-);
-
-sceneManager = new SceneManager(size, mouse, loadingManger);
-
-// Events
-window.addEventListener("click", () => {
-  if (isObjectLoaded && cannon) {
-    gameManager.handleShoot();
-  }
-});
-
-playAgain.addEventListener("mousedown", () => {
-  if (gameManager) {
-    gameManager.resetGame();
-  }
-});
-
-window.addEventListener("mousemove", (event) => {
-  mouse.x = event.pageX / size.width;
-  mouse.y = event.pageY / size.height;
-});
-
-window.addEventListener("keydown", (event) => {
-  if (cannon) {
-    if (event.code === "Digit2") {
-      cannon.isCameraChasing = true;
-    } else if (event.code === "Digit1") {
-      cannon.isCameraChasing = false;
-    }
-  }
-});
-
-window.addEventListener("resize", () => {
-  size.width = window.innerWidth;
-  size.height = window.innerHeight;
-  if (sceneManager) {
-    sceneManager.onResize(size);
-  }
-});
