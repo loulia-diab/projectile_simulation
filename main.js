@@ -79,6 +79,7 @@ const water = new THREE.Mesh(
     normalMap: waterTextures.waterNormalTexture,
     transparent: true,
     opacity: 0.9,
+ 
   })
 );
 water.rotation.x = -Math.PI / 2;
@@ -186,11 +187,11 @@ const camera = new THREE.PerspectiveCamera(
   75,
   sizes.width / sizes.height,
   0.1,
-  1000
+  4000
 );
 camera.position.x = 0;
-camera.position.y = 40;
-camera.position.z = 490;
+camera.position.y = 80;
+camera.position.z = 520;
 scene.add(camera);
 
 // Controls

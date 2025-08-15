@@ -12,9 +12,9 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
 
     gltfModel.scene.scale.set(50, 50, 50); // حجم الهدف
     const positions = [
-      { x: -150, y: 5, z: -100 },
-      { x: 0,   y: 5, z: 0 },
-      { x: 100,  y: 5, z: 100 },
+      { x: -150, y: 5, z: -400 },
+      { x: 0,   y: 5, z: -200 },
+      { x: 100,  y: 5, z: 0 },
       { x: 50,  y: 5, z: 200 }
     ];
 
@@ -44,9 +44,9 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
     gltfModel.scene.scale.set(14, 14, 14);
     
     const positions = [
-      { x: -190, y: 0, z: 270 },
+      { x: -190, y: 0, z: 220 },
       { x: 240, y: 0, z: 80 },
-      { x: -150, y: 0, z: -200 }
+      { x: -190, y: 0, z: -400 }
     ];
 
     positions.forEach((pos) => {
@@ -55,49 +55,58 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       scene.add(barrelClone);
       intersectObjects.push(barrelClone);
     });
-        
+      
     });
+  /*
     gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
-        console.log(gltfModel.scene);
-        const model = gltfModel.scene;
-  model.traverse((node) => {
+        const ship = gltfModel.scene;
+  ship.traverse((node) => {
     if (node.isMesh) {
       node.castShadow = true;
       node.receiveShadow = true;
     }
   });
-
-  // تصغير/تكبير
-  model.scale.set(70, 70, 70);
-
-  // تحريك للمركز
-        model.position.set(-700, -0, -300);
-        model.rotation.y = -Math.PI /2;
-
-  scene.add(model);
-/*
+      ship.scale.set(10, 10, 10);
+      ship.position.set(-500, 0, -1100);
+      ship.rotation.y = Math.PI/4 ;
+      scene.add(ship);
+    });
+  */
+   gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
          gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
         node.castShadow = true;
         node.receiveShadow = true;
       }
     });
-    gltfModel.scene.scale.set(0.1, 0.1, 0.1);
+    gltfModel.scene.scale.set(10, 10, 10);
     
     const positions = [
-      { x: -300, y: 0, z: 200 },
-      { x: 400, y: 0, z: 400 },
-      { x: 0, y: 0, z: 300 }
+      { x: -400, y: 0, z: -1100 },
+      { x: -2000, y: 0, z: -2500 }
     ];
 
     positions.forEach((pos) => {
       const shipClone = gltfModel.scene.clone();
       shipClone.position.set(pos.x, pos.y, pos.z);
+      shipClone.rotation.y = Math.PI/4 ;
       scene.add(shipClone);
-     
     });
-        */
+        
+    });
+   gltfLoader.load("static/models/island/scene.gltf", (gltfModel) => {
+        const island = gltfModel.scene;
+  island.traverse((node) => {
+    if (node.isMesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
   });
+      island.scale.set(30, 30, 30);
+      island.position.set(-900, 10, -130);
+      island.rotation.y = Math.PI ;
+     scene.add(island);
+     });
   // باقي تحميل الموديلات الأخرى...
 };
 
