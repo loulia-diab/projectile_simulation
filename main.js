@@ -1,4 +1,3 @@
-
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //اداة لتدوير وتحريك الكااميرا بالماوس
@@ -9,6 +8,10 @@ import loadWaterTextures from "./src/config/WaterTextures";
 import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
+import World from "./src/physics/world.js";
+import Ball from "./src/physics/ball.js";
+import * as dat from "dat.gui";
+
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
@@ -16,43 +19,168 @@ const canvas = document.querySelector("canvas.webgl");
 const intersectObjects = [];
 const movingTargets = []; // نخزن فيه الأهداف المتحركة
 
+/////////////////
+const gui = new dat.GUI();
+gui.close();
+const worldfolder = gui.addFolder("world");
+const ballFolder = gui.addFolder("ball");
+const coefficientsFolder = ballFolder.addFolder("coefficients");
+coefficientsFolder.open();
+coefficientsFolder.hide();
+worldfolder.open();
+ballFolder.open();
+const GRAVITY = 9.8;
+const HEIGHT = 0,
+  TEMPERETURE = 15; // celsius
+const WIND_SPEED = 10,
+  WIND_ANGLE = Math.PI / 2;
+const mouse = { x: 0, y: 0 }; ////////////////////
+
+let isClicked = false;
+let isFinished = false;
+let isObjectLoaded = false;
+
+const SHOOT_DELAY = 2000; // ms
+
+window.addEventListener("mousemove", (e) => {
+  // تحويل الإحداثيات من -1 إلى 1
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+/*
+    Paramters
+*/
+const paramters = {
+  windSpeed: 10,
+  windAngle: Math.PI / 2,
+  angular_speedX: 0,
+  angular_speedY: 1,
+  angular_speedZ: 0,
+  axesHelper: false,
+  radius: 1.5,
+  gravity: 9.8,
+  dragCoeff: 0.47,
+  height: 0,
+  tempereture: 15,
+  resistanseCoeff: 0.8,
+  frictionCoeff: 0.8,
+  mass: 1000,
+  speed: 20,
+  type: 0,
+  types: {
+    default() {
+      paramters.type = 0;
+      paramters.ballTextures = ballTextures[0];
+      coefficientsFolder.show();
+      massController.domElement.hidden = false;
+    },
+    wood() {
+      paramters.type = 1;
+      paramters.ballTextures = ballTextures[1];
+      coefficientsFolder.hide();
+      massController.domElement.hidden = true;
+    },
+    steal() {
+      paramters.type = 2;
+      paramters.ballTextures = ballTextures[0];
+      coefficientsFolder.hide();
+      massController.domElement.hidden = true;
+    },
+    rubber() {
+      paramters.type = 3;
+      paramters.ballTextures = ballTextures[2];
+      coefficientsFolder.hide();
+      massController.domElement.hidden = true;
+    },
+  },
+};
+
+// Physics World
+// =============================================================
+
+const world = new World(GRAVITY, HEIGHT, TEMPERETURE, WIND_SPEED, WIND_ANGLE);
+worldfolder
+  .add(paramters, "gravity", -10, 100, 0.1)
+  .name("gravity")
+  .onChange(() => {
+    world.gravity = paramters.gravity;
+  });
+
+worldfolder
+  .add(paramters, "windSpeed", 0, 100, 0.01)
+  .name("Wind Speed")
+  .onChange(() => {
+    world.wind_speed = paramters.windSpeed;
+  });
+worldfolder
+  .add(paramters, "windAngle", 0, 6.2831853072, 0.2)
+  .name("Wind Angle")
+  .onChange(() => {
+    world.wind_angle = paramters.windAngle;
+    rotateAboutPoint(
+      flag,
+      flagBase.position,
+      new THREE.Vector3(0, 1, 0),
+      paramters.windAngle
+    );
+  });
+worldfolder
+  .add(paramters, "height", -100, 1000, 10)
+  .name("Height")
+  .onChange(() => {
+    world.height = paramters.height;
+  });
+
+worldfolder
+  .add(paramters, "tempereture", -100, 100, 1)
+  .name("Tempereture")
+  .onChange(() => {
+    world.tempereture = paramters.tempereture;
+  });
+
+/* 
+    Tweak gui values
+*/
+ballFolder.add(paramters, "axesHelper");
+ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
+let massController = ballFolder
+  .add(paramters, "mass", 1, 5000, 0.5)
+  .name("ball mass");
+ballFolder.add(paramters, "speed", 10, 35, 0.1).name("ball speed");
+ballFolder
+  .add(paramters, "angular_speedX", -10, 10, 0.1)
+  .name("Angular speed X");
+ballFolder
+  .add(paramters, "angular_speedY", -10, 10, 0.1)
+  .name("Angular speed Y");
+ballFolder
+  .add(paramters, "angular_speedZ", -10, 10, 0.1)
+  .name("Angular speed Z");
+const subFolder = ballFolder.addFolder("types");
+subFolder.add(paramters.types, "default");
+subFolder.add(paramters.types, "wood");
+subFolder.add(paramters.types, "steal");
+subFolder.add(paramters.types, "rubber");
+subFolder.open();
+
+coefficientsFolder.add(paramters, "dragCoeff", 0, 1, 0.001).name("dragCoeff");
+coefficientsFolder
+  .add(paramters, "resistanseCoeff", 0, 1, 0.001)
+  .name("resistanseCoeff");
+coefficientsFolder
+  .add(paramters, "frictionCoeff", 0, 1, 0.001)
+  .name("frictionCoeff");
+  
+/////////////////
+
 // Textures
 const textureLoader = new THREE.TextureLoader();
 const woodTextures = loadWoodTextures(textureLoader);
 const waterTextures = loadWaterTextures(textureLoader);
 
-// floor
-/*
-const grasscolorTexture = textureLoader.load("./textures/grass/color.jpg");
-const grassambientocculsionTexture = textureLoader.load(
-  "./textures/grass/ambientOcclusion.jpg"
-);
-const grassroughnessTexture = textureLoader.load(
-  "./textures/grass/roughness.jpg"
-);
-const grassnormalTexture = textureLoader.load("./textures/grass/normal.jpg");
-const DisplacementTexture = textureLoader.load(
-  "./textures/grass/Displacement.jpg"
-);
-*/
 // Scene
 const scene = new THREE.Scene();
-
-/*
-const geometry = new THREE.CircleGeometry(2000, 2000);
-const material = new THREE.MeshStandardMaterial({
-  map: grasscolorTexture,
-  aoMap: grassambientocculsionTexture,
-  roughnessMap: grassroughnessTexture,
-  normalMap: grassnormalTexture,
-  displacementMap: DisplacementTexture,
-});
-const Meshfloor = new THREE.Mesh(geometry, material);
-
-Meshfloor.rotation.x = -Math.PI * 0.5;
-Meshfloor.position.y = 0;
-scene.add(Meshfloor);
-*/
 
 // سطح السفينة الخشبي
 const deck = new THREE.Mesh(
@@ -83,7 +211,7 @@ const water = new THREE.Mesh(
   })
 );
 water.rotation.x = -Math.PI / 2;
-water.position.y = -0.3; // تحت سطح السفينة قليلاً
+water.position.y = -1; // تحت سطح السفينة قليلاً
 scene.add(water);
 
 // سور السفينة
@@ -120,30 +248,97 @@ const rightWall = leftWall.clone();
 rightWall.position.set(300, wallHeight / 2, 0);
 scene.add(rightWall);
 
-
-/*
-grasscolorTexture.repeat.set(18000, 18000);
-grassambientocculsionTexture.repeat.set(18000, 18000);
-grassnormalTexture.repeat.set(18000, 18000);
-grassroughnessTexture.repeat.set(18000, 18000);
-DisplacementTexture.repeat.set(18000, 18000);
-
-grasscolorTexture.wrapS = THREE.RepeatWrapping;
-grassambientocculsionTexture.wrapS = THREE.RepeatWrapping;
-grassnormalTexture.wrapS = THREE.RepeatWrapping;
-grassroughnessTexture.wrapS = THREE.RepeatWrapping;
-DisplacementTexture.wrapS = THREE.RepeatWrapping;
-
-grasscolorTexture.wrapT = THREE.RepeatWrapping;
-grassambientocculsionTexture.wrapT = THREE.RepeatWrapping;
-grassnormalTexture.wrapT = THREE.RepeatWrapping;
-grassroughnessTexture.wrapT = THREE.RepeatWrapping;
-DisplacementTexture.wrapT = THREE.RepeatWrapping;
-*/
-
 // Models
 const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
+
+///////////////////////////////////////////////
+let cannon;
+gltfLoader.load("static/models/cannon.glb", (gltf) => {
+  cannon = new Cannon(gltf, scene);
+}, undefined, (err) => console.error("Failed to load cannon:", err));
+
+let lastShootingTime = 0; 
+
+let objectsToUpdate = [];
+let shotedTaregt = [];
+const clock = new THREE.Clock();
+let oldElapsedTime = 0;
+
+window.addEventListener("keydown", (e) => {
+  if(e.key === " " && cannon && cannon.isReady && performance.now() - lastShootingTime > 2000){
+    createCannonBall();
+    cannon.recoil();
+    lastShootingTime = performance.now();
+  }
+});
+const createCannonBall = () => {
+
+  // الشكل المرئي للطابة
+  let cannonBall = new THREE.Mesh(
+    new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
+  );
+  cannonBall.castShadow = true;
+  cannonBall.position.copy(cannon.getBallPosition());
+  const ballAxes = new THREE.AxesHelper(50);
+cannonBall.add(ballAxes);
+  scene.add(cannonBall);
+
+
+  // axes helper
+  if (axesHelper) scene.remove(axesHelper);
+  axesHelper = new THREE.AxesHelper(5);
+  scene.add(axesHelper);
+
+  // فيزياء الطابة
+  const angular_speed = vector.create(
+    paramters.angular_speedX,
+    paramters.angular_speedY,
+    paramters.angular_speedZ
+  );
+  // خذ موقع فوهة الطابة العالمي
+ 
+    const ballDirection = cannon.getDirection();
+    const ballStartPos = cannon.getBallPosition();
+
+   const angleXY = Math.asin(ballDirection.y);
+const angleXZ = Math.atan2(ballDirection.z, ballDirection.x); // تبديل المحاور
+
+
+let physicsBall = new Ball(
+    ballStartPos,                // موقع الطابة
+    paramters.speed, // السرعة الابتدائية
+        angleXY,
+        angleXZ,
+    paramters.radius,
+    paramters.type,
+    paramters.mass,
+    paramters.dragCoeff,
+    angular_speed,
+    paramters.resistanseCoeff,
+    paramters.frictionCoeff
+);
+
+  world.add(physicsBall);
+
+  objectsToUpdate.push({ cannonBall, physicsBall });
+  intersectObjects.push(cannonBall);
+};
+
+
+const removeBallsGreaterThanOne = () => {
+  if (objectsToUpdate.length >= 1) {
+    objectsToUpdate.forEach((e) => {
+      scene.remove(e.cannonBall);
+      e.cannonBall.material.dispose();
+      e.cannonBall.geometry.dispose();
+      intersectObjects = intersectObjects.filter((i) => i !== e.cannonBall);
+      world.remove(e.physicsBall);
+    });
+    objectsToUpdate = [];
+  }
+};
+///////////////////////////////////////////////
 
 // Lights
 
@@ -190,9 +385,23 @@ const camera = new THREE.PerspectiveCamera(
   4000
 );
 camera.position.x = 0;
-camera.position.y = 80;
-camera.position.z = 520;
+camera.position.y = 100;
+camera.position.z = 530;
 scene.add(camera);
+
+// sounds
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const backgroundSound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+
+audioLoader.load('static/sounds/Captain-Jack-Sparrow-theme-music.m4a', function(buffer) {
+    backgroundSound.setBuffer(buffer);
+    backgroundSound.setLoop(true);      // تكرار الصوت
+    backgroundSound.setVolume(0.5);     // مستوى الصوت (0 = صامت، 1 = أقصى)
+    backgroundSound.play();             // تشغيل الصوت
+});
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
@@ -278,15 +487,55 @@ let oldElapsedTime = 0;
 function animate() {
   requestAnimationFrame(animate);
 
+const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  // تحديث الفيزياء
+  world.update(deltaTime);
+
+  // تحريك الأهداف المتحركة
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.direction * target.userData.speed;
+    if (target.position.x > 150) target.userData.direction = -1;
+    else if (target.position.x < -150) target.userData.direction = 1;
+  });
+
+  // مزامنة الطابات مع الفيزياء
+  objectsToUpdate.forEach((object, index) => {
+    const { cannonBall, physicsBall } = object;
+
+    // تحديث موقع الطابة
+    cannonBall.position.copy(physicsBall.position);
+    cannonBall.quaternion.copy(physicsBall.quaternion);
+    if (axesHelper) {
+      axesHelper.position.copy(cannonBall.position);
+      axesHelper.quaternion.copy(cannonBall.quaternion);
+      axesHelper.visible = paramters.axesHelper;
+    }
+    if (
+      Math.abs(cannonBall.position.x) > 900 ||
+      Math.abs(cannonBall.position.z) > 900
+    ) {
+      setTimeout(() => {
+        scene.remove(cannonBall);
+        cannonBall.geometry.dispose();
+        cannonBall.material.dispose();
+        world.remove(physicsBall);
+        objectsToUpdate.splice(index, 1);
+      }, 1000);
+    }
+  });
+
+    if (cannon?.isReady) {
+        cannon.update(mouse);
+    }
+        renderer.render(scene, camera);
+/*
   // تحريك الأهداف
   movingTargets.forEach(target => {
     target.position.x += target.userData.direction * target.userData.speed;
-/*
-    if (target.position.x > target.userData.startX + target.userData.range) {
-      target.userData.direction = -1;
-    } else if (target.position.x < target.userData.startX - target.userData.range) {
-      target.userData.direction = 1;
-    }*/
+
      if (target.position.x > 150) {
       target.userData.direction = -1;
     } else if (target.position.x < -150) {
@@ -308,10 +557,8 @@ function animate() {
 
   controls.update();
   renderer.render(scene, camera);
+  */
 }
 
 animate();
 }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
-

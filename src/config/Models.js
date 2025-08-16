@@ -57,21 +57,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
     });
       
     });
-  /*
-    gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
-        const ship = gltfModel.scene;
-  ship.traverse((node) => {
-    if (node.isMesh) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-    }
-  });
-      ship.scale.set(10, 10, 10);
-      ship.position.set(-500, 0, -1100);
-      ship.rotation.y = Math.PI/4 ;
-      scene.add(ship);
-    });
-  */
+
    gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
          gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
@@ -106,7 +92,34 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       island.position.set(-900, 10, -130);
       island.rotation.y = Math.PI ;
      scene.add(island);
-     });
-  // باقي تحميل الموديلات الأخرى...
-};
+   });
+  
+  gltfLoader.load("static/models/pirate/scene.gltf", (gltfModel) => {
+        const pirate = gltfModel.scene;
+  pirate.traverse((node) => {
+    if (node.isMesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
+      pirate.scale.set(0.07, 0.07,0.07);
+      pirate.position.set(200, 0, 370);
+      pirate.rotation.y = -Math.PI/4 ;
+      scene.add(pirate);
+  });
 
+    gltfLoader.load("static/models/flag/scene.gltf", (gltfModel) => {
+        const flag = gltfModel.scene;
+  flag.traverse((node) => {
+    if (node.isMesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
+      flag.scale.set(0.6, 0.6,0.06);
+      flag.position.set(220, 0, -370);
+     // pirate.rotation.y = -Math.PI/4 ;
+      scene.add(flag);
+    });
+
+};
