@@ -93,7 +93,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       island.rotation.y = Math.PI ;
      scene.add(island);
    });
-  
+  /*
   gltfLoader.load("static/models/pirate/scene.gltf", (gltfModel) => {
         const pirate = gltfModel.scene;
   pirate.traverse((node) => {
@@ -107,7 +107,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       pirate.rotation.y = -Math.PI/4 ;
       scene.add(pirate);
   });
-
+*/
     gltfLoader.load("static/models/flag/scene.gltf", (gltfModel) => {
         const flag = gltfModel.scene;
   flag.traverse((node) => {
@@ -118,7 +118,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
   });
       flag.scale.set(0.6, 0.6,0.06);
       flag.position.set(220, 0, -370);
-     // pirate.rotation.y = -Math.PI/4 ;
+     // flag.rotation.y = -Math.PI/4 ;
       scene.add(flag);
     });
 

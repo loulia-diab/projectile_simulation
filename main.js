@@ -10,6 +10,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 import World from "./src/physics/world.js";
 import Ball from "./src/physics/ball.js";
+import vector from "./src/physics/vector.js";
 import * as dat from "dat.gui";
 
 // Canvas
@@ -39,7 +40,6 @@ const mouse = { x: 0, y: 0 }; ////////////////////
 let isClicked = false;
 let isFinished = false;
 let isObjectLoaded = false;
-
 const SHOOT_DELAY = 2000; // ms
 
 window.addEventListener("mousemove", (e) => {
@@ -54,9 +54,9 @@ window.addEventListener("mousemove", (e) => {
 const paramters = {
   windSpeed: 10,
   windAngle: Math.PI / 2,
-  angular_speedX: 0,
-  angular_speedY: 1,
-  angular_speedZ: 0,
+  angular_speedX: 1,
+  angular_speedY: 0,
+  angular_speedZ: 1,
   axesHelper: false,
   radius: 1.5,
   gravity: 9.8,
@@ -138,8 +138,7 @@ worldfolder
   .onChange(() => {
     world.tempereture = paramters.tempereture;
   });
-
-/* 
+  /* 
     Tweak gui values
 */
 ballFolder.add(paramters, "axesHelper");
@@ -253,92 +252,6 @@ const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
 
 ///////////////////////////////////////////////
-let cannon;
-gltfLoader.load("static/models/cannon.glb", (gltf) => {
-  cannon = new Cannon(gltf, scene);
-}, undefined, (err) => console.error("Failed to load cannon:", err));
-
-let lastShootingTime = 0; 
-
-let objectsToUpdate = [];
-let shotedTaregt = [];
-const clock = new THREE.Clock();
-let oldElapsedTime = 0;
-
-window.addEventListener("keydown", (e) => {
-  if(e.key === " " && cannon && cannon.isReady && performance.now() - lastShootingTime > 2000){
-    createCannonBall();
-    cannon.recoil();
-    lastShootingTime = performance.now();
-  }
-});
-const createCannonBall = () => {
-
-  // الشكل المرئي للطابة
-  let cannonBall = new THREE.Mesh(
-    new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
-  );
-  cannonBall.castShadow = true;
-  cannonBall.position.copy(cannon.getBallPosition());
-  const ballAxes = new THREE.AxesHelper(50);
-cannonBall.add(ballAxes);
-  scene.add(cannonBall);
-
-
-  // axes helper
-  if (axesHelper) scene.remove(axesHelper);
-  axesHelper = new THREE.AxesHelper(5);
-  scene.add(axesHelper);
-
-  // فيزياء الطابة
-  const angular_speed = vector.create(
-    paramters.angular_speedX,
-    paramters.angular_speedY,
-    paramters.angular_speedZ
-  );
-  // خذ موقع فوهة الطابة العالمي
- 
-    const ballDirection = cannon.getDirection();
-    const ballStartPos = cannon.getBallPosition();
-
-   const angleXY = Math.asin(ballDirection.y);
-const angleXZ = Math.atan2(ballDirection.z, ballDirection.x); // تبديل المحاور
-
-
-let physicsBall = new Ball(
-    ballStartPos,                // موقع الطابة
-    paramters.speed, // السرعة الابتدائية
-        angleXY,
-        angleXZ,
-    paramters.radius,
-    paramters.type,
-    paramters.mass,
-    paramters.dragCoeff,
-    angular_speed,
-    paramters.resistanseCoeff,
-    paramters.frictionCoeff
-);
-
-  world.add(physicsBall);
-
-  objectsToUpdate.push({ cannonBall, physicsBall });
-  intersectObjects.push(cannonBall);
-};
-
-
-const removeBallsGreaterThanOne = () => {
-  if (objectsToUpdate.length >= 1) {
-    objectsToUpdate.forEach((e) => {
-      scene.remove(e.cannonBall);
-      e.cannonBall.material.dispose();
-      e.cannonBall.geometry.dispose();
-      intersectObjects = intersectObjects.filter((i) => i !== e.cannonBall);
-      world.remove(e.physicsBall);
-    });
-    objectsToUpdate = [];
-  }
-};
-///////////////////////////////////////////////
 
 // Lights
 
@@ -371,7 +284,6 @@ window.onload = () => {
   // Update camera
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
-
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -431,7 +343,7 @@ window.addEventListener("resize", () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  document.addEventListener("keydown", onDocumentKeyDown, false);
+  //document.addEventListener("keydown", onDocumentKeyDown, false);
 });
 // end resize
 
@@ -468,26 +380,103 @@ window.onload = () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
- const cannon = new Cannon(scene);
-if (cannon && cannon.isReady) {
-  console.log("Cannon position:", cannon.group.position);
-  if (cannon.ball) {
-    const ballWorldPos = new THREE.Vector3();
-    cannon.ball.mesh.getWorldPosition(ballWorldPos);
-    console.log("Ball world position:", ballWorldPos);
-  }
 }
+// =============================================================
+// Cannon & Ball 
+// =============================================================
+//
+
+let cannon;
+gltfLoader.load("static/models/cannon.glb", (gltf) => {
+  cannon = new Cannon(gltf, scene);
+}, undefined, (err) => console.error("Failed to load cannon:", err));
+let lastShootingTime = 0; 
+
+let objectsToUpdate = [];
+let shotedTaregt = [];
+
+window.addEventListener("keydown", (e) => {
+  if(e.key === " " && cannon && cannon.isReady && performance.now() - lastShootingTime > 2000){
+    createCannonBall();
+    cannon.recoil();
+    lastShootingTime = performance.now();
+  }
+});
+const createCannonBall = () => {
+
+  // الشكل المرئي للطابة
+  let cannonBall = new THREE.Mesh(
+    new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
+  );
+  cannonBall.castShadow = true;
+  cannonBall.position.copy(cannon.getBallPosition());
+  const ballAxes = new THREE.AxesHelper(50);
+cannonBall.add(ballAxes);
+  scene.add(cannonBall);
+
+
+  // axes helper
+  if (axesHelper) scene.remove(axesHelper);
+  axesHelper = new THREE.AxesHelper(500);
+  scene.add(axesHelper);
+  // فيزياء الطابة
+  const angular_speed = vector.create(
+    paramters.angular_speedX,
+    paramters.angular_speedY,
+    paramters.angular_speedZ
+  );
+  // خذ موقع فوهة الطابة العالمي
+ 
+    const ballDirection = cannon.getDirection();
+    const ballStartPos = cannon.getBallPosition();
+    ballDirection.z *= -1; 
+   const angleXY = Math.asin(ballDirection.y);
+   const angleXZ = Math.atan2(ballDirection.z, ballDirection.x);
+
+
+let physicsBall = new Ball(
+    ballStartPos,                // موقع الطابة
+    paramters.speed, // السرعة الابتدائية
+        angleXY,
+        angleXZ,
+    paramters.radius,
+    paramters.type,
+    paramters.mass,
+    paramters.dragCoeff,
+    angular_speed,
+    paramters.resistanseCoeff,
+    paramters.frictionCoeff
+);
+
+  world.add(physicsBall);
+
+  objectsToUpdate.push({ cannonBall, physicsBall });
+  intersectObjects.push(cannonBall);
+};
+
+
+const removeBallsGreaterThanOne = () => {
+  if (objectsToUpdate.length >= 1) {
+    objectsToUpdate.forEach((e) => {
+      scene.remove(e.cannonBall);
+      e.cannonBall.material.dispose();
+      e.cannonBall.geometry.dispose();
+      intersectObjects = intersectObjects.filter((i) => i !== e.cannonBall);
+      world.remove(e.physicsBall);
+    });
+    objectsToUpdate = [];
+  }
+};
+
+
 
 const clock = new THREE.Clock();
 let mixers = [];
 
 let oldElapsedTime = 0;
 
-function animate() {
-  requestAnimationFrame(animate);
-
-const elapsedTime = clock.getElapsedTime();
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
@@ -531,34 +520,8 @@ const elapsedTime = clock.getElapsedTime();
         cannon.update(mouse);
     }
         renderer.render(scene, camera);
-/*
-  // تحريك الأهداف
-  movingTargets.forEach(target => {
-    target.position.x += target.userData.direction * target.userData.speed;
+  
+    requestAnimationFrame(tick);
+};
 
-     if (target.position.x > 150) {
-      target.userData.direction = -1;
-    } else if (target.position.x < -150) {
-      target.userData.direction = 1;
-    }
-  });
-
-  const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - oldElapsedTime;
-  oldElapsedTime = elapsedTime;
-
-  // تحديث المدفع إذا كان جاهز
-   if (cannon && cannon.isReady) {
-    cannon.update();
-  }
-
-  // تحديث الأنيميشن
-  mixers.forEach((mixer) => mixer.update(deltaTime));
-
-  controls.update();
-  renderer.render(scene, camera);
-  */
-}
-
-animate();
-}
+tick();
