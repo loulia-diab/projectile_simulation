@@ -8,9 +8,10 @@ import loadWaterTextures from "./src/config/WaterTextures";
 import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import World from "./physics/world.js";
-import Ball from "./physics/ball.js";
-import vector from "./physics/vector.js";
+import World from "./src/physics/world.js";
+import Ball from "./src/physics/ball.js";
+import vector from "./src/physics/vector.js";
+
 import * as dat from "dat.gui";
 
 // Canvas
@@ -52,7 +53,9 @@ window.addEventListener("mousemove", (e) => {
     Paramters
 */
 const paramters = {
+
   windSpeed: 1,
+
   windAngle: Math.PI / 2,
   angular_speedX: 1,
   angular_speedY: 0,
@@ -139,9 +142,8 @@ worldfolder
     world.tempereture = paramters.tempereture;
   });
 
-/* 
-    Tweak gui values
-*/
+    
+
 ballFolder.add(paramters, "axesHelper");
 ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
 let massController = ballFolder
@@ -285,7 +287,6 @@ window.onload = () => {
   // Update camera
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
-
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

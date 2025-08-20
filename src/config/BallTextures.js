@@ -50,4 +50,6 @@ export const loadBallTextures = (textureLoader) => {
       roughness: rubberRoughnessTexture,
     },
   ];
+
 };
+

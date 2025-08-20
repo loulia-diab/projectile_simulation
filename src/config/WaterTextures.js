@@ -22,12 +22,7 @@ const loadWaterTextures = (textureLoader) => {
       tex.repeat.set(repeatCount, 30);
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     });
-  /*
-  waterColorTexture.repeat.set(20, 20);
-  waterNormalTexture.repeat.set(20, 20);
-  waterColorTexture.wrapS = waterColorTexture.wrapT = THREE.RepeatWrapping;
-  waterNormalTexture.wrapS = waterNormalTexture.wrapT = THREE.RepeatWrapping;
-*/
+
   waterTextures.waterColorTexture = waterColorTexture;
   waterTextures.waterNormalTexture = waterNormalTexture;
   waterTextures.waterAmbientOcclusionTexture = waterAmbientOcclusionTexture;
