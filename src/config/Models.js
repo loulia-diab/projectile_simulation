@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) => {
 
-  gltfLoader.load("static/models/target/scene.gltf", (gltfModel) => {
+  gltfLoader.load("/models/target/scene.gltf", (gltfModel) => {
     gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
         node.castShadow = true;
@@ -34,7 +34,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
     });
   });
     
-    gltfLoader.load("static/models/barrel/scene.gltf", (gltfModel) => {
+    gltfLoader.load("/models/barrel/scene.gltf", (gltfModel) => {
          gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
         node.castShadow = true;
@@ -59,4 +59,3 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
   });
   // باقي تحميل الموديلات الأخرى...
 };
-

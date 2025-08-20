@@ -1,26 +1,21 @@
+
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //اداة لتدوير وتحريك الكااميرا بالماوس
 import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
 import loadWaterTextures from "./src/config/WaterTextures";
-
+import World from "./physics/world.js";
 import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-
-import World from "./physics/world.js";
+import * as dat from "dat.gui";
+//import { loadBallTextures } from "./src/config/BallTextures";
 import Ball from "./physics/ball.js";
 import vector from "./physics/vector.js";
-import * as dat from "dat.gui";
-
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
-// Variables
-const intersectObjects = [];
-const movingTargets = []; // نخزن فيه الأهداف المتحركة
-
-/////////////////
+//////////// VARIABLES///////////////////////////////////////////////////////////////////////////////////
 const gui = new dat.GUI();
 gui.close();
 const worldfolder = gui.addFolder("world");
@@ -35,11 +30,12 @@ const HEIGHT = 0,
   TEMPERETURE = 15; // celsius
 const WIND_SPEED = 10,
   WIND_ANGLE = Math.PI / 2;
-const mouse = { x: 0, y: 0 }; ////////////////////
+const mouse = { x: 0, y: 0 };
 
 let isClicked = false;
 let isFinished = false;
 let isObjectLoaded = false;
+
 const SHOOT_DELAY = 2000; // ms
 
 window.addEventListener("mousemove", (e) => {
@@ -47,16 +43,15 @@ window.addEventListener("mousemove", (e) => {
   mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 });
-
 /*
     Paramters
 */
 const paramters = {
-  windSpeed: 1,
+  windSpeed: 10,
   windAngle: Math.PI / 2,
-  angular_speedX: 1,
-  angular_speedY: 0,
-  angular_speedZ: 1,
+  angular_speedX: 0,
+  angular_speedY: 1,
+  angular_speedZ: 0,
   axesHelper: false,
   radius: 1.5,
   gravity: 9.8,
@@ -95,7 +90,7 @@ const paramters = {
     },
   },
 };
-
+//// =============================================================
 // Physics World
 // =============================================================
 
@@ -171,17 +166,17 @@ coefficientsFolder
 coefficientsFolder
   .add(paramters, "frictionCoeff", 0, 1, 0.001)
   .name("frictionCoeff");
-  
-/////////////////
+
+// Variables
+const intersectObjects = [];
+const movingTargets = []; // نخزن فيه الأهداف المتحركة
 
 // Textures
 const textureLoader = new THREE.TextureLoader();
 const woodTextures = loadWoodTextures(textureLoader);
 const waterTextures = loadWaterTextures(textureLoader);
-
 // Scene
 const scene = new THREE.Scene();
-
 // سطح السفينة الخشبي
 const deck = new THREE.Mesh(
   new THREE.PlaneGeometry(600, 1000, 10, 10),
@@ -211,7 +206,7 @@ const water = new THREE.Mesh(
   })
 );
 water.rotation.x = -Math.PI / 2;
-water.position.y = -1; // تحت سطح السفينة قليلاً
+water.position.y = -0.3; // تحت سطح السفينة قليلاً
 scene.add(water);
 
 // سور السفينة
@@ -247,12 +242,9 @@ scene.add(leftWall);
 const rightWall = leftWall.clone();
 rightWall.position.set(300, wallHeight / 2, 0);
 scene.add(rightWall);
-
 // Models
 const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
-
-///////////////////////////////////////////////
 
 // Lights
 
@@ -268,29 +260,12 @@ moonLight.castShadow = true;
 scene.add(moonLight);
 
 // end light
-
-
 //////////////////////////////////////////camera and resize  ////////////////////////////////////////////
 // Sizes
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-/*
-window.onload = () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-};
-*/
 // Camera
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -299,23 +274,9 @@ const camera = new THREE.PerspectiveCamera(
   4000
 );
 camera.position.x = 0;
-camera.position.y = 100;
-camera.position.z = 530;
+camera.position.y = 80;
+camera.position.z = 520;
 scene.add(camera);
-
-// sounds
-const listener = new THREE.AudioListener();
-camera.add(listener);
-
-const backgroundSound = new THREE.Audio(listener);
-const audioLoader = new THREE.AudioLoader();
-
-audioLoader.load('static/sounds/Captain-Jack-Sparrow-theme-music.m4a', function(buffer) {
-    backgroundSound.setBuffer(buffer);
-    backgroundSound.setLoop(true);      // تكرار الصوت
-    backgroundSound.setVolume(0.5);     // مستوى الصوت (0 = صامت، 1 = أقصى)
-    backgroundSound.play();             // تشغيل الصوت
-});
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
@@ -332,8 +293,6 @@ renderer.shadowMap.enabled = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 
-// camera
-
 // resize
 window.addEventListener("resize", () => {
   // Update sizes
@@ -345,18 +304,14 @@ window.addEventListener("resize", () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  //document.addEventListener("keydown", onDocumentKeyDown, false);
+ 
 });
 // end resize
 
-////////////////////////////////////end camera and resize  ////////////////////////////////////////////
-
-
-//renderer.setClearColor("#4682B4"); // steel blue
 /*
     Configure Scene
 */
-//scene.fog = new THREE.Fog(0xcce0ff, 1300, 1600);
+
 const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_48d_partly_cloudy_puresky.png", () => {
   const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
   rt.fromEquirectangularTexture(renderer, texture);
@@ -364,13 +319,11 @@ const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_4
 });
 
 
-////////////////////////////////////  Model   ////////////////////////////////////////////////////////
 //اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
 scene.add(axesHelper);
 ///////////////////////////////////
 window.onload = () => {
-
    // Update sizes
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
@@ -382,6 +335,7 @@ window.onload = () => {
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
 }
 // =============================================================
 // Cannon & Ball 
@@ -396,6 +350,8 @@ let lastShootingTime = 0;
 
 let objectsToUpdate = [];
 let shotedTaregt = [];
+const clock = new THREE.Clock();
+let oldElapsedTime = 0;
 
 window.addEventListener("keydown", (e) => {
   if(e.key === " " && cannon && cannon.isReady && performance.now() - lastShootingTime > 2000){
@@ -419,7 +375,7 @@ cannonBall.add(ballAxes);
 
   // axes helper
   if (axesHelper) scene.remove(axesHelper);
-  axesHelper = new THREE.AxesHelper(500);
+  axesHelper = new THREE.AxesHelper(5);
   scene.add(axesHelper);
 
   // فيزياء الطابة
@@ -432,9 +388,9 @@ cannonBall.add(ballAxes);
  
     const ballDirection = cannon.getDirection();
     const ballStartPos = cannon.getBallPosition();
-    ballDirection.z *= -1; 
+
    const angleXY = Math.asin(ballDirection.y);
-   const angleXZ = Math.atan2(ballDirection.z, ballDirection.x);
+const angleXZ = Math.atan2(ballDirection.z, ballDirection.x); // تبديل المحاور
 
 
 let physicsBall = new Ball(
@@ -471,13 +427,9 @@ const removeBallsGreaterThanOne = () => {
   }
 };
 
-
-
-const clock = new THREE.Clock();
-let mixers = [];
-
-let oldElapsedTime = 0;
-
+// =====================
+// حلقة الرسوم
+// =====================
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
