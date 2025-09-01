@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 // Cannon.js
 
 // classes/Cannon.js
@@ -96,17 +96,7 @@ class Cannon {
     return correctedDir; // هاد اللي رح تستخدمه للإطلاق والسهم
 }
     */
-   getDirection() {
-    const localForward = new THREE.Vector3(1, 0, 0); // جرب المحاور واحد واحد
-    this.muzzle.updateMatrixWorld(true);
-    const worldDir = localForward.clone().transformDirection(this.muzzle.matrixWorld);
-   return worldDir.negate().normalize();
-
-}
-
-<<<<<<< HEAD
-export default Cannon;
-*/
+   
 /*
 import * as THREE from "three";
 import gsap from "gsap";
@@ -732,6 +722,7 @@ getDirection() {
 }
 export default Cannon;
 */
+
 import * as THREE from "three";
 import gsap from "gsap";
 
@@ -758,7 +749,7 @@ class Cannon {
             }
         });
 
-        // ⚡ إنشاء dummy object للفوهة
+        // ⚡️ إنشاء dummy object للفوهة
         this.muzzle = new THREE.Object3D();
         this.muzzle.position.set(-88, 0, 50); // مكان الفوهة داخل الموديل
         this.mesh.add(this.muzzle);
@@ -827,7 +818,6 @@ class Cannon {
 }
 
 
-
     recoil() {
         if (!this.group) return;
         const zPosition = this.group.position.z;
@@ -864,4 +854,5 @@ this.mesh.rotation.y = mouse.y * Math.PI / 6;
         console.log("اتجاه:", dir);
     }
 }
+
 export default Cannon;
