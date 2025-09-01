@@ -4,10 +4,14 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //ا�
 import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
 import loadWaterTextures from "./src/config/WaterTextures";
+import { loadBallTextures } from "./src/config/BallTextures";
 
 import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-
+/*
+import flagVertexShader from "./src/shaders/FlagSheders/vertex.glsl";
+import flagFragmentShader from "./src/shaders/FlagSheders/fragment.glsl";
+*/
 import World from "./src/physics/world.js";
 import Ball from "./src/physics/ball.js";
 import vector from "./src/physics/vector.js";
@@ -18,10 +22,7 @@ import * as dat from "dat.gui";
 const canvas = document.querySelector("canvas.webgl");
 
 // Variables
-const intersectObjects = [];
-const movingTargets = []; // نخزن فيه الأهداف المتحركة
 
-/////////////////
 const gui = new dat.GUI();
 gui.close();
 const worldfolder = gui.addFolder("world");
@@ -41,7 +42,15 @@ const mouse = { x: 0, y: 0 }; ////////////////////
 let isClicked = false;
 let isFinished = false;
 let isObjectLoaded = false;
-const SHOOT_DELAY = 2000; // ms
+
+const SHOOT_DELAY = 2000;//////تأخير بين إطلاقات الكرات (2 ثانية).
+let lastShotingTime = 0;//////: آخر وقت أُطلقت فيه كرة.
+let numberOfBalls = 20;
+let numberOfTargets = 7;
+let score = 0;
+
+const intersectObjects = [];
+const movingTargets = []; // نخزن فيه الأهداف المتحركة
 
 window.addEventListener("mousemove", (e) => {
   // تحويل الإحداثيات من -1 إلى 1
@@ -61,7 +70,7 @@ const paramters = {
   angular_speedY: 0,
   angular_speedZ: 1,
   axesHelper: false,
-  radius: 1.5,
+  radius: 3,
   gravity: 9.8,
   dragCoeff: 0.47,
   height: 0,
@@ -100,7 +109,7 @@ const paramters = {
 };
 
 // Physics World
-// =============================================================
+// ================================
 
 const world = new World(GRAVITY, HEIGHT, TEMPERETURE, WIND_SPEED, WIND_ANGLE);
 worldfolder
@@ -142,7 +151,6 @@ worldfolder
     world.tempereture = paramters.tempereture;
   });
 
-    
 
 ballFolder.add(paramters, "axesHelper");
 ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
@@ -173,13 +181,15 @@ coefficientsFolder
 coefficientsFolder
   .add(paramters, "frictionCoeff", 0, 1, 0.001)
   .name("frictionCoeff");
-  
-/////////////////
+
 
 // Textures
 const textureLoader = new THREE.TextureLoader();
 const woodTextures = loadWoodTextures(textureLoader);
 const waterTextures = loadWaterTextures(textureLoader);
+const ballTextures = loadBallTextures(textureLoader);
+paramters.ballTextures = ballTextures;
+paramters.types.default();
 
 // Scene
 const scene = new THREE.Scene();
@@ -269,8 +279,6 @@ moonLight.position.set(4, 5, -2);
 moonLight.castShadow = true;
 scene.add(moonLight);
 
-// end light
-
 
 //////////////////////////////////////////camera and resize  ////////////////////////////////////////////
 // Sizes
@@ -317,6 +325,31 @@ audioLoader.load('static/sounds/Captain-Jack-Sparrow-theme-music.m4a', function(
     backgroundSound.setVolume(0.5);     // مستوى الصوت (0 = صامت، 1 = أقصى)
     backgroundSound.play();             // تشغيل الصوت
 });
+audioLoader.load("static/sounds/CANNON-SOUND-EFFECT-HD-FOR-VIDEOS-and-GAMES.m4a", (audioBuffer) => {
+  shootingSoundEffect.setBuffer(audioBuffer);
+
+});
+const shootingSoundEffect = new THREE.Audio(listener);
+shootingSoundEffect.setVolume(1);
+scene.add(shootingSoundEffect);
+
+
+/*
+    Game Screen
+
+const numberofBallsWidget = document.querySelector(".cannonBallsNumber");
+numberofBallsWidget.innerHTML = numberOfBalls;
+
+const scoreWidget = document.querySelector(".ScoreNumber");
+scoreWidget.innerHTML = score;
+
+const targetWidget = document.querySelector(".targetNumbers");
+targetWidget.innerHTML = numberOfTargets;
+
+const gameFinshed = document.querySelector(".gameFinshedLayout");
+
+const playAgain = document.querySelector(".playAgain");
+*/
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
@@ -366,9 +399,10 @@ const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_4
 
 
 ////////////////////////////////////  Model   ////////////////////////////////////////////////////////
-//اظهار المحاورs
+
+// في المركز اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
-scene.add(axesHelper);
+//scene.add(axesHelper);
 ///////////////////////////////////
 window.onload = () => {
 
@@ -403,26 +437,39 @@ window.addEventListener("keydown", (e) => {
     createCannonBall();
     cannon.recoil();
     lastShootingTime = performance.now();
+    shootingSoundEffect.play();
   }
 });
-const createCannonBall = () => {
 
+const createCannonBall = () => {
+//  removeBallsGreaterThanOne();
+  
   // الشكل المرئي للطابة
   let cannonBall = new THREE.Mesh(
     new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
+     new THREE.MeshStandardMaterial({
+      map: paramters.ballTextures.color,
+      aoMap: paramters.ballTextures.ao,
+      roughnessMap: paramters.ballTextures.roughness,
+      normalMap: paramters.ballTextures.normal,
+      metalnessMap: paramters.ballTextures.metalness,
+    })
   );
   cannonBall.castShadow = true;
   cannonBall.position.copy(cannon.getBallPosition());
+  /*
   const ballAxes = new THREE.AxesHelper(50);
 cannonBall.add(ballAxes);
+*/
   scene.add(cannonBall);
 
-
   // axes helper
+  
   if (axesHelper) scene.remove(axesHelper);
   axesHelper = new THREE.AxesHelper(500);
   scene.add(axesHelper);
 
+  
   // فيزياء الطابة
   const angular_speed = vector.create(
     paramters.angular_speedX,
@@ -501,11 +548,13 @@ const tick = () => {
     // تحديث موقع الطابة
     cannonBall.position.copy(physicsBall.position);
     cannonBall.quaternion.copy(physicsBall.quaternion);
+    
     if (axesHelper) {
       axesHelper.position.copy(cannonBall.position);
       axesHelper.quaternion.copy(cannonBall.quaternion);
       axesHelper.visible = paramters.axesHelper;
     }
+    
     if (
       Math.abs(cannonBall.position.x) > 900 ||
       Math.abs(cannonBall.position.z) > 900
