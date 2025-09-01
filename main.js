@@ -1,5 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
+import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //اداة لتدوير وتحريك الكااميرا بالماوس
 import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
@@ -15,7 +16,7 @@ import flagFragmentShader from "./src/shaders/FlagSheders/fragment.glsl";
 import World from "./src/physics/world.js";
 import Ball from "./src/physics/ball.js";
 import vector from "./src/physics/vector.js";
-import * as dat from "dat.gui";
+
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -67,7 +68,7 @@ const paramters = {
   angular_speedY: 0,
   angular_speedZ: 1,
   axesHelper: false,
-  radius: 3,
+  radius: 1,
   gravity: 9.8,
   dragCoeff: 0.47,
   height: 0,
@@ -126,7 +127,8 @@ worldfolder
   .add(paramters, "windAngle", 0, 6.2831853072, 0.2)
   .name("Wind Angle")
   .onChange(() => {
-    world.wind_angle = paramters.windAngle;
+    world.wind_angle = paramters.windAngle
+    ////////////////////////////////////////////
     rotateAboutPoint(
       flag,
       flagBase.position,
@@ -152,7 +154,7 @@ worldfolder
     Tweak gui values
 */
 ballFolder.add(paramters, "axesHelper");
-ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
+ballFolder.add(paramters, "radius", 0, 2, 0.1).name("ball radius");
 let massController = ballFolder
   .add(paramters, "mass", 1, 5000, 0.5)
   .name("ball mass");
@@ -354,6 +356,17 @@ const playAgain = document.querySelector(".playAgain");
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
+/*
+    Reycaster
+*/
+const raycaster = new THREE.Raycaster();
+raycaster.far = 20;
+raycaster.near = 2;
+let rayOrigin;
+let rayDirection = new THREE.Vector3(0, 0, -10);
+rayDirection.normalize();
+
+
 // Renderer
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -380,9 +393,6 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   //document.addEventListener("keydown", onDocumentKeyDown, false);
 });
-// end resize
-
-////////////////////////////////////end camera and resize  ////////////////////////////////////////////
 
 
 //renderer.setClearColor("#4682B4"); // steel blue
@@ -441,7 +451,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 const createCannonBall = () => {
-//  removeBallsGreaterThanOne();
+ // removeBallsGreaterThanOne();
   
   // الشكل المرئي للطابة
   let cannonBall = new THREE.Mesh(
@@ -458,7 +468,7 @@ const createCannonBall = () => {
   cannonBall.position.copy(cannon.getBallPosition());
   /*
   const ballAxes = new THREE.AxesHelper(50);
-cannonBall.add(ballAxes);
+  cannonBall.add(ballAxes);
 */
   scene.add(cannonBall);
 
