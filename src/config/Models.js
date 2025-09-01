@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) => {
 
-  gltfLoader.load("static/models/target/scene.gltf", (gltfModel) => {
+  gltfLoader.load("/models/target/scene.gltf", (gltfModel) => {
     gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
         node.castShadow = true;
@@ -34,7 +34,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
     });
   });
     
-    gltfLoader.load("static/models/barrel/scene.gltf", (gltfModel) => {
+    gltfLoader.load("/models/barrel/scene.gltf", (gltfModel) => {
          gltfModel.scene.traverse(function (node) {
       if (node instanceof THREE.Mesh) {
         node.castShadow = true;
@@ -55,7 +55,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       scene.add(barrelClone);
       intersectObjects.push(barrelClone);
     });
-      
+
     });
 
    gltfLoader.load("static/models/ship/scene.gltf", (gltfModel) => {
@@ -77,6 +77,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       shipClone.position.set(pos.x, pos.y, pos.z);
       shipClone.rotation.y = Math.PI/4 ;
       scene.add(shipClone);
+       intersectObjects.push(shipClone);
     });
         
     });
@@ -92,6 +93,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       island.position.set(-900, 10, -130);
       island.rotation.y = Math.PI ;
      scene.add(island);
+     intersectObjects.push(island);
    });
   /*
   gltfLoader.load("static/models/pirate/scene.gltf", (gltfModel) => {
