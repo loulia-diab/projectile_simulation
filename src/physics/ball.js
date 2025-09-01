@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Vector3 } from "three";
 
 class Ball {
+
   constructor(
     position,
     speed,
@@ -60,6 +61,8 @@ class Ball {
     this.rotationMatrix = new THREE.Matrix3();
     this.intersectsObjects = [];
   }
+
+
   update(time, gravity, air_rho, wind_velo) {
     //Forces
     let gravityForce = this.gravity_force(gravity);

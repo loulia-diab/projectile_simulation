@@ -69,7 +69,7 @@ const paramters = {
   angular_speedY: 0,
   angular_speedZ: 1,
   axesHelper: false,
-  radius: 1,
+  radius: 0.8,
   gravity: 9.8,
   dragCoeff: 0.47,
   height: 0,
@@ -153,7 +153,7 @@ worldfolder
 
 
 ballFolder.add(paramters, "axesHelper");
-ballFolder.add(paramters, "radius", 0, 2, 0.1).name("ball radius");
+ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
 let massController = ballFolder
   .add(paramters, "mass", 1, 5000, 0.5)
   .name("ball mass");
@@ -265,7 +265,77 @@ intersectObjects.push(backWall);
 intersectObjects.push(leftWall);
 intersectObjects.push(rightWall);
 
-//
+// بوصلة
+
+// مجموعة السهم
+const compassScene = new THREE.Scene();
+const compassCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 1, 1000);
+compassCamera.position.set(0, 0, 100);
+compassCamera.lookAt(0, 0, 0);
+
+const compassLight = new THREE.AmbientLight(0xffffff, 1); // ضوء ناعم
+compassScene.add(compassLight);
+
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+directionalLight.position.set(0, 50, 50);
+compassScene.add(directionalLight);
+
+const compassBackground = new THREE.Mesh(
+  new THREE.CircleGeometry(50, 64),
+  new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.5 })
+);
+compassBackground.position.set(0, 0, -1); // ضعها خلف السهم
+compassScene.add(compassBackground);
+
+const compassArrow = new THREE.Group();
+
+// جسم السهم (العمود)
+const shaftGeometry = new THREE.CylinderGeometry(2, 2, 30, 16);
+const shaftMaterial = new THREE.MeshStandardMaterial({
+  color: 0xff0000,
+  metalness: 0.7,
+  roughness: 0.3,
+});
+const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+shaft.castShadow = true;
+shaft.position.y = 15; // منتصف السهم
+compassArrow.add(shaft);
+
+// رأس السهم (المؤشر)
+const headGeometry = new THREE.ConeGeometry(5, 15, 32);
+const headMaterial = new THREE.MeshStandardMaterial({
+  color: 0xff0000,
+  metalness: 0.7,
+  roughness: 0.3,
+});
+const head = new THREE.Mesh(headGeometry, headMaterial);
+head.castShadow = true;
+head.position.y = 37.5; // أعلى العمود
+compassArrow.add(head);
+
+// قاعدة صغيرة للسهم لإحساس بالعمق
+const baseGeometry = new THREE.CylinderGeometry(3, 3, 5, 16);
+const baseMaterial = new THREE.MeshStandardMaterial({
+  color: 0x333333,
+  metalness: 0.5,
+  roughness: 0.6,
+});
+const base = new THREE.Mesh(baseGeometry, baseMaterial);
+base.position.y = 2.5; 
+compassArrow.add(base);
+
+// ضع السهم داخل مشهد البوصلة
+compassArrow.position.y = 0;
+compassScene.add(compassArrow);
+
+// ==================== تحديث السهم مع الرياح ====================
+const updateCompassArrow = () => {
+  const targetRotation = -world.wind_angle;
+  // حركة سلسة نحو زاوية الرياح
+  compassArrow.rotation.z += (targetRotation - compassArrow.rotation.z) * 0.1;
+};
+
 // Models
 const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
@@ -459,7 +529,10 @@ const createCannonBall = () => {
     })
   );
   cannonBall.castShadow = true;
+  const displayScale = 3;
+  cannonBall.scale.set(displayScale, displayScale, displayScale);
   cannonBall.position.copy(cannon.getBallPosition());
+ // cannonBall.position.y += 2;
   /*
   const ballAxes = new THREE.AxesHelper(50);
   cannonBall.add(ballAxes);
@@ -824,6 +897,7 @@ raycaster.far = 20;
 raycaster.near = 0.1;
 
 const tick = () => {
+
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
@@ -879,8 +953,34 @@ const tick = () => {
   // 4️⃣ تحديث المدفع
   if (cannon?.isReady) cannon.update(mouse);
 
+// 1) ارسم المشهد الأساسي بالحجم الكامل
+renderer.setViewport(0, 0, sizes.width, sizes.height);
+renderer.setScissorTest(false);
+renderer.render(scene, camera);
+
+// 2) حضّر الطبقة فوق المشهد
+renderer.clearDepth();                  // مهم: يصفر الـ depth حتى يرسم فوق
+renderer.setScissorTest(true);          // خليه يرسم فقط ضمن مستطيل البوصلة
+renderer.setScissor(20, 20, 120, 120);  // مكان/حجم البوصلة على الشاشة
+renderer.setViewport(20, 20, 120, 120); // نفس مستطيل البوصلة
+
+// 3) حدّث دوران السهم حسب زاوية الرياح
+  //compassArrow.rotation.z = -world.wind_angle;
+  updateCompassArrow();
+
+renderer.setClearColor(0x000000, 0); // alpha = 0
+
+
+// 4) ارسم مشهد البوصلة
+renderer.render(compassScene, compassCamera);
+
+// 5) رجّع الإعدادات للوضع الطبيعي (مهم جداً)
+renderer.setScissorTest(false);
+renderer.setViewport(0, 0, sizes.width, sizes.height);
+
+
   // 5️⃣ الرندر
-  renderer.render(scene, camera);
+  //renderer.render(scene, camera);
 
   requestAnimationFrame(tick);
 };
