@@ -70,7 +70,7 @@ const paramters = {
   angular_speedY: 0,
   angular_speedZ: 1,
   axesHelper: false,
-  radius: 3,
+  radius: 2,
   gravity: 9.8,
   dragCoeff: 0.47,
   height: 0,
@@ -153,7 +153,7 @@ worldfolder
 
 
 ballFolder.add(paramters, "axesHelper");
-ballFolder.add(paramters, "radius", 0, 1, 0.01).name("ball radius");
+ballFolder.add(paramters, "radius", 0, 2, 0.01).name("ball radius");
 let massController = ballFolder
   .add(paramters, "mass", 1, 5000, 0.5)
   .name("ball mass");
@@ -259,7 +259,13 @@ scene.add(leftWall);
 const rightWall = leftWall.clone();
 rightWall.position.set(300, wallHeight / 2, 0);
 scene.add(rightWall);
+//
+intersectObjects.push(frontWall);
+intersectObjects.push(backWall);
+intersectObjects.push(leftWall);
+intersectObjects.push(rightWall);
 
+//
 // Models
 const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
@@ -323,10 +329,10 @@ audioLoader.load('static/sounds/Captain-Jack-Sparrow-theme-music.m4a', function(
     backgroundSound.setBuffer(buffer);
     backgroundSound.setLoop(true);      // تكرار الصوت
     backgroundSound.setVolume(0.5);     // مستوى الصوت (0 = صامت، 1 = أقصى)
-    backgroundSound.play();             // تشغيل الصوت
+    //backgroundSound.play();             // تشغيل الصوت
 });
 audioLoader.load("static/sounds/CANNON-SOUND-EFFECT-HD-FOR-VIDEOS-and-GAMES.m4a", (audioBuffer) => {
-  shootingSoundEffect.setBuffer(audioBuffer);
+ shootingSoundEffect.setBuffer(audioBuffer);
 
 });
 const shootingSoundEffect = new THREE.Audio(listener);
@@ -418,10 +424,9 @@ window.onload = () => {
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
-// =============================================================
+
 // Cannon & Ball 
-// =============================================================
-//
+
 
 let cannon;
 gltfLoader.load("static/models/cannon.glb", (gltf) => {
@@ -430,7 +435,6 @@ gltfLoader.load("static/models/cannon.glb", (gltf) => {
 let lastShootingTime = 0; 
 
 let objectsToUpdate = [];
-let shotedTaregt = [];
 
 window.addEventListener("keydown", (e) => {
   if(e.key === " " && cannon && cannon.isReady && performance.now() - lastShootingTime > 2000){
@@ -442,8 +446,6 @@ window.addEventListener("keydown", (e) => {
 });
 
 const createCannonBall = () => {
-//  removeBallsGreaterThanOne();
-  
   // الشكل المرئي للطابة
   let cannonBall = new THREE.Mesh(
     new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
@@ -520,12 +522,19 @@ const removeBallsGreaterThanOne = () => {
 };
 
 
+//
 
+//
 const clock = new THREE.Clock();
-let mixers = [];
-
+//let mixers = [];
 let oldElapsedTime = 0;
+/*
+    Reycaster
+*/
 
+
+/*
+/*
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
@@ -575,6 +584,308 @@ const tick = () => {
         renderer.render(scene, camera);
   
     requestAnimationFrame(tick);
+};
+
+tick();
+*/
+///
+
+/*
+const raycaster = new THREE.Raycaster();
+raycaster.near = 0;
+raycaster.far = 100;
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  // تحديث الفيزياء للطابات
+  world.update(deltaTime);
+
+  // تحريك الأهداف المتحركة
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.speed * target.userData.direction;
+
+    if (target.position.x > 150) target.userData.direction = -1;
+    else if (target.position.x < -150) target.userData.direction = 1;
+  });
+
+  // مزامنة الطابات وفحص الاصطدام
+  objectsToUpdate.forEach(object => {
+    const { cannonBall, physicsBall } = object;
+
+    // مزامنة موقع الطابة مع الفيزياء
+    cannonBall.position.copy(physicsBall.position);
+    cannonBall.quaternion.copy(physicsBall.quaternion);
+
+    // تحويل السرعة من كلاس Ball إلى THREE.Vector3
+    const velocityVec = new THREE.Vector3(
+      physicsBall.velocity.getX(),
+      physicsBall.velocity.getY(),
+      physicsBall.velocity.getZ()
+    );
+
+    if (velocityVec.length() > 0) {
+      // ضبط Raycaster
+      raycaster.set(cannonBall.position.clone(), velocityVec.clone().normalize());
+
+      // فحص الاصطدام مع الأهداف المتحركة
+      const intersects = raycaster.intersectObjects(movingTargets, true);
+
+      intersects.forEach(intersect => {
+        const hit = intersect.object;
+
+        // تحقق إذا لم نصدمه مسبقاً
+        if (!physicsBall.intersectsObjects.includes(hit)) {
+          physicsBall.intersectsObjects.push(hit);
+
+          // صدم حقيقي: انعكاس السرعة على محور الاصطدام
+          const normal = intersect.face.normal.clone();
+          const v = velocityVec.clone();
+          const reflected = v.sub(normal.multiplyScalar(2 * v.dot(normal)));
+
+          physicsBall.velocity._x = reflected.x * 0.8; // تقليل قليل للطاقة
+          physicsBall.velocity._y = reflected.y * 0.8;
+          physicsBall.velocity._z = reflected.z * 0.8;
+        }
+      });
+    }
+
+    // إزالة الطابة إذا خرجت بعيداً جداً
+    if (
+      Math.abs(cannonBall.position.x) > 900 ||
+      Math.abs(cannonBall.position.z) > 900
+    ) {
+      scene.remove(cannonBall);
+      objectsToUpdate.splice(objectsToUpdate.indexOf(object), 1);
+    }
+  });
+
+  // تحديث المدفع (لو موجود)
+  if (cannon?.isReady) cannon.update(mouse);
+
+  // الرندر
+  renderer.render(scene, camera);
+
+  requestAnimationFrame(tick);
+};
+
+tick();
+*/
+// هي شغالة صدم براميل واهداف
+/*
+const raycaster = new THREE.Raycaster();
+raycaster.far = 20;
+raycaster.near = 0.1;
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  // تحديث الفيزياء للكرات
+  world.update(deltaTime);
+
+  // تحديث الأهداف المتحركة
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.direction * target.userData.speed;
+    if (target.position.x > target.userData.startX + target.userData.range) target.userData.direction = -1;
+    if (target.position.x < target.userData.startX - target.userData.range) target.userData.direction = 1;
+  });
+
+  // تحديث كل كرة وفحص الاصطدام
+  objectsToUpdate.forEach((object) => {
+    const { cannonBall, physicsBall } = object;
+
+    // مزامنة موقع الكرة مع الفيزياء
+    cannonBall.position.copy(physicsBall.position);
+    cannonBall.quaternion.copy(physicsBall.quaternion);
+
+    // تحويل السرعة من كلاس Ball إلى Vector3
+    const velocityVec = new THREE.Vector3(
+      physicsBall.velocity.getX(),
+      physicsBall.velocity.getY(),
+      physicsBall.velocity.getZ()
+    );
+
+    if (velocityVec.length() > 0) {
+      // ضبط Raycaster
+      raycaster.set(cannonBall.position, velocityVec.clone().normalize());
+
+      // فحص الاصطدام مع كل الأجسام الممكنة
+      const intersects = raycaster.intersectObjects(intersectObjects, true);
+
+      intersects.forEach(intersect => {
+        // إذا الهدف متحرك أو ثابت
+        physicsBall.fraction(intersect); // هذه دالتك تتعامل مع الصدم
+      });
+    }
+  });
+
+  // تحديث المدفع
+  if (cannon?.isReady) cannon.update(mouse);
+
+  // الرندر
+  renderer.render(scene, camera);
+
+  requestAnimationFrame(tick);
+};
+
+tick();
+*/
+
+
+// ====== مصفوفة لتخزين كل الأجسام القابلة للتصادم ======
+// مثال لإضافة كل شيء إلى intersectObjects
+// ====== حلقة التحديث ======
+/*
+const raycaster = new THREE.Raycaster();
+raycaster.far = 20;
+raycaster.near = 0.1;
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  // تحديث الفيزياء للطابات
+  world.update(deltaTime);
+
+  // تحريك الأهداف المتحركة
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.direction * target.userData.speed;
+    if (target.position.x > target.userData.startX + target.userData.range) target.userData.direction = -1;
+    if (target.position.x < target.userData.startX - target.userData.range) target.userData.direction = 1;
+  });
+
+  // تحديث كل كرة وفحص الاصطدام
+  objectsToUpdate.forEach((object, index) => {
+    const { cannonBall, physicsBall } = object;
+
+    // مزامنة موقع الطابة مع الفيزياء
+    cannonBall.position.copy(physicsBall.position);
+    cannonBall.quaternion.copy(physicsBall.quaternion);
+
+    // تحويل السرعة لكائن Vector3
+    const velocityVec = new THREE.Vector3(
+      physicsBall.velocity.getX(),
+      physicsBall.velocity.getY(),
+      physicsBall.velocity.getZ()
+    );
+
+    if (velocityVec.length() > 0) {
+      // ضبط Raycaster على اتجاه الحركة
+      raycaster.set(cannonBall.position, velocityVec.clone().normalize());
+
+      // فحص التصادم مع كل الأجسام
+      const intersects = raycaster.intersectObjects(intersectObjects, true);
+
+      intersects.forEach(intersect => {
+        // هنا تتعامل مع التصادم
+        physicsBall.fraction(intersect); 
+      });
+    }
+
+    // إزالة الطابة إذا خرجت خارج حدود اللعبة (مثال)
+    if (
+      Math.abs(cannonBall.position.x) > 1000 ||
+      Math.abs(cannonBall.position.z) > 1000
+    ) {
+      scene.remove(cannonBall);
+      objectsToUpdate.splice(index, 1);
+    }
+  });
+
+  // تحديث المدفع إذا جاهز
+  if (cannon?.isReady) cannon.update(mouse);
+
+  // الرندر
+  renderer.render(scene, camera);
+
+  requestAnimationFrame(tick);
+};
+
+tick();
+
+*/
+// مفروض عندك world و objectsToUpdate جاهزين
+frontWall.userData.isWall = true;
+backWall.userData.isWall = true;
+leftWall.userData.isWall = true;
+rightWall.userData.isWall = true;
+
+// إنشاء Box3 لكل جدار
+frontWall.userData.box = new THREE.Box3().setFromObject(frontWall);
+backWall.userData.box = new THREE.Box3().setFromObject(backWall);
+leftWall.userData.box = new THREE.Box3().setFromObject(leftWall);
+rightWall.userData.box = new THREE.Box3().setFromObject(rightWall);
+
+
+const raycaster = new THREE.Raycaster();
+raycaster.far = 20;
+raycaster.near = 0.1;
+
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
+
+  // 1️⃣ تحديث الفيزياء للطابات (الأرضية والجدران تتعامل مع الفيزياء نفسها)
+  world.update(deltaTime);
+
+  // 2️⃣ تحريك الأهداف المتحركة
+  movingTargets.forEach(target => {
+    target.position.x += target.userData.direction * target.userData.speed;
+    if (target.position.x > target.userData.startX + target.userData.range) target.userData.direction = -1;
+    if (target.position.x < target.userData.startX - target.userData.range) target.userData.direction = 1;
+  });
+
+  // 3️⃣ تحديث كل كرة وفحص التصادم
+  objectsToUpdate.forEach((object, index) => {
+    const { cannonBall, physicsBall } = object;
+
+    // مزامنة موقع الطابة مع الفيزياء
+    cannonBall.position.copy(physicsBall.position);
+    cannonBall.quaternion.copy(physicsBall.quaternion);
+
+    // تحويل السرعة لكائن Vector3
+    const velocityVec = new THREE.Vector3(
+      physicsBall.velocity.getX(),
+      physicsBall.velocity.getY(),
+      physicsBall.velocity.getZ()
+    );
+
+    if (velocityVec.length() > 0) {
+      // ضبط Raycaster على اتجاه الحركة
+      raycaster.set(cannonBall.position, velocityVec.clone().normalize());
+
+      // فحص التصادم مع كل الأجسام
+      const intersects = raycaster.intersectObjects(intersectObjects, true);
+
+      intersects.forEach(intersect => {
+        // أي جسم → استعمل دالة fraction للفيزياء
+        physicsBall.fraction(intersect);
+      });
+    }
+
+    // إزالة الطابة إذا خرجت من حدود اللعبة
+    if (
+      Math.abs(cannonBall.position.x) > 1000 ||
+      Math.abs(cannonBall.position.z) > 1000
+    ) {
+      scene.remove(cannonBall);
+      objectsToUpdate.splice(index, 1);
+    }
+  });
+
+  // 4️⃣ تحديث المدفع
+  if (cannon?.isReady) cannon.update(mouse);
+
+  // 5️⃣ الرندر
+  renderer.render(scene, camera);
+
+  requestAnimationFrame(tick);
 };
 
 tick();

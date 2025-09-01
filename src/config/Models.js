@@ -77,6 +77,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       shipClone.position.set(pos.x, pos.y, pos.z);
       shipClone.rotation.y = Math.PI/4 ;
       scene.add(shipClone);
+       intersectObjects.push(shipClone);
     });
         
     });
@@ -92,6 +93,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       island.position.set(-900, 10, -130);
       island.rotation.y = Math.PI ;
      scene.add(island);
+     intersectObjects.push(island);
    });
   /*
   gltfLoader.load("static/models/pirate/scene.gltf", (gltfModel) => {
