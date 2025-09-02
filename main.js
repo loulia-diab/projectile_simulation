@@ -439,7 +439,7 @@ const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_4
 });
 
 
-////////////////////////////////////  Model   ////////////////////////////////////////////////////////
+////////////////////////////////////  Model   //////////////////////////////////////////////
 
 // في المركز اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
@@ -482,7 +482,8 @@ window.addEventListener("keydown", (e) => {
 
 const createCannonBall = () => {
 
- // removeBallsGreaterThanOne();
+  //removeBallsGreaterThanOne();
+  removeAllBalls();
 
   // الشكل المرئي للطابة
   let cannonBall = new THREE.Mesh(
@@ -496,14 +497,7 @@ const createCannonBall = () => {
     })
   );
   cannonBall.castShadow = true;
-
- //onst displayScale = 3;
  /*
-  cannonBall.scale.set(displayScale, displayScale, displayScale);
-  cannonBall.position.copy(cannon.getBallPosition());
-  */
- // cannonBall.position.y += 2;
-  /*
   const ballAxes = new THREE.AxesHelper(50);
   cannonBall.add(ballAxes);
 */
@@ -546,9 +540,7 @@ let physicsBall = new Ball(
 );
 
   world.add(physicsBall);
-
   objectsToUpdate.push({ cannonBall, physicsBall });
-  
   intersectObjects.push(cannonBall);
   
  // حساب نصف القطر المرئي للطابة (نحتاجه في اختبارات الـ Sphere)
@@ -557,7 +549,27 @@ cannonBall.scale.set(displayScale, displayScale, displayScale);
 cannonBall.userData.visualRadius = (paramters.radius * 5) * displayScale; // paramters.radius*5 هو radius geometry
 
 };
+const removeAllBalls = () => {
+  if (objectsToUpdate.length > 0) {
+    for (let i = 0; i < objectsToUpdate.length; i++) {
+      const ball = objectsToUpdate[i];
+      scene.remove(ball.cannonBall);
+      //  من مصفوفة التقاطعات
+      const idx = intersectObjects.indexOf(ball.cannonBall);
+      if (idx > -1) intersectObjects.splice(idx, 1);
 
+      // تحرير الذاكرة
+      ball.cannonBall.geometry.dispose();
+      ball.cannonBall.material.dispose();
+      // من عالم الفيزياء
+      world.remove(ball.physicsBall);
+    }
+    // فضي المصفوفة
+    objectsToUpdate = [];
+  }
+};
+
+/*
 const removeBallsGreaterThanOne = () => {
   if (objectsToUpdate.length >= 1) {
     objectsToUpdate.forEach((e) => {
@@ -569,7 +581,7 @@ const removeBallsGreaterThanOne = () => {
     });
     objectsToUpdate = [];
   }
-};
+};*/
 
 //
 const clock = new THREE.Clock();
