@@ -207,6 +207,7 @@ const deck = new THREE.Mesh(
   })
 );
 deck.rotation.x = -Math.PI / 2;
+deck.position.y = -5;
 deck.receiveShadow = true;
 scene.add(deck);
 
@@ -223,7 +224,7 @@ const water = new THREE.Mesh(
   })
 );
 water.rotation.x = -Math.PI / 2;
-water.position.y = -1; // تحت سطح السفينة قليلاً
+water.position.y = -6; // تحت سطح السفينة قليلاً
 scene.add(water);
 
 // سور السفينة
@@ -242,22 +243,22 @@ const frontWall = new THREE.Mesh(
   new THREE.BoxGeometry(600, wallHeight, wallThickness),
   wallMaterial
 );
-frontWall.position.set(0, wallHeight / 2, -500);
+frontWall.position.set(0, wallHeight / 2 - 5, -500);
 scene.add(frontWall);
 
 const backWall = frontWall.clone();
-backWall.position.set(0, wallHeight / 2, 500);
+backWall.position.set(0, wallHeight / 2 -5 , 500);
 scene.add(backWall);
 
 const leftWall = new THREE.Mesh(
   new THREE.BoxGeometry(wallThickness, wallHeight, 1000),
   wallMaterial
 );
-leftWall.position.set(-300, wallHeight / 2, 0);
+leftWall.position.set(-300, wallHeight / 2 -5 , 0);
 scene.add(leftWall);
 
 const rightWall = leftWall.clone();
-rightWall.position.set(300, wallHeight / 2, 0);
+rightWall.position.set(300, wallHeight / 2 -5 , 0);
 scene.add(rightWall);
 //
 intersectObjects.push(frontWall);
@@ -970,17 +971,12 @@ renderer.setViewport(20, 20, 120, 120); // نفس مستطيل البوصلة
 
 renderer.setClearColor(0x000000, 0); // alpha = 0
 
-
 // 4) ارسم مشهد البوصلة
 renderer.render(compassScene, compassCamera);
 
 // 5) رجّع الإعدادات للوضع الطبيعي (مهم جداً)
 renderer.setScissorTest(false);
 renderer.setViewport(0, 0, sizes.width, sizes.height);
-
-
-  // 5️⃣ الرندر
-  //renderer.render(scene, camera);
 
   requestAnimationFrame(tick);
 };

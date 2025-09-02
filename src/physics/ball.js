@@ -315,6 +315,7 @@ class Ball {
       1 - 2 * Math.pow(q.x, 2) - 2 * Math.pow(q.y, 2)
     );
   }
+  
   bouncing() {
     let ground = 3.0;
     if (this.raduis > 4.5) ground = 19.0;

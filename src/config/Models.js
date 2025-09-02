@@ -12,10 +12,10 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
 
     gltfModel.scene.scale.set(50, 50, 50); // حجم الهدف
     const positions = [
-      { x: -150, y: 5, z: -400 },
-      { x: 0,   y: 5, z: -200 },
-      { x: 100,  y: 5, z: 0 },
-      { x: 50,  y: 5, z: 200 }
+      { x: -150, y: 0, z: -400 },
+      { x: 0,   y: 0, z: -200 },
+      { x: 100,  y: 0, z: 0 },
+      { x: 50,  y: 0, z: 200 }
     ];
 
     positions.forEach(pos => {
@@ -68,8 +68,8 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
     gltfModel.scene.scale.set(10, 10, 10);
     
     const positions = [
-      { x: -400, y: 0, z: -1100 },
-      { x: -2000, y: 0, z: -2500 }
+      { x: -400, y: -5, z: -1100 },
+      { x: -2000, y: -5, z: -2500 }
     ];
 
     positions.forEach((pos) => {
@@ -121,7 +121,7 @@ export const loadModels = (scene, gltfLoader, intersectObjects, movingTargets) =
       flag.scale.set(0.6, 0.6,0.06);
       flag.position.set(220, 0, -370);
      // flag.rotation.y = -Math.PI/4 ;
-      scene.add(flag);
+     // scene.add(flag);
     });
 
 };
