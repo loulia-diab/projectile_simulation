@@ -317,6 +317,50 @@ class Ball {
   }
   
   bouncing() {
+
+    // 🔹 أولاً: تحقق إذا الكرة على الخشب أو بالماء
+  const deckHalfX = 600 / 2;
+  const deckHalfZ = 1000 / 2;
+  const deckY = -5;
+  const waterY = -6;
+
+  const isOnDeck =
+    this.position.x > -deckHalfX &&
+    this.position.x < deckHalfX &&
+    this.position.z > -deckHalfZ &&
+    this.position.z < deckHalfZ;
+
+  if (!isOnDeck) {
+    // الكرة بالماء
+    if (this.position.y <= waterY + this.raduis) {
+      if (this.type == 2) {
+        // فولاذ → يغرق
+        this.velocity._x = 0;
+        this.velocity._z = 0;
+        this.velocity._y = -1; // نزول تدريجي
+      } else {
+         // خشب أو غيره → يطفو فوق سطح الماء
+    const floatLevel = waterY + this.raduis;
+
+    if (this.position.y <= floatLevel) {
+      this.position.y = floatLevel;
+      this.velocity._x = 0;
+      this.velocity._z = 1;
+      this.velocity._y = 0;
+      this.rolling = false;
+    }
+        /*
+        // خشب أو غيره → يطفو
+        this.position.y = waterY + this.raduis;
+        this.velocity._x = 0;
+        this.velocity._z = 0;
+        this.velocity._y = 0;
+        this.rolling = false;*/
+      }
+    }
+    return; // ✅ نوقف وما نكمل كود الأرض
+  }
+
     let ground = 3.0;
     if (this.raduis > 4.5) ground = 19.0;
     else if (this.raduis > 4) ground = 17.0;
