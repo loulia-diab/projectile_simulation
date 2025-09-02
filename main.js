@@ -1,4 +1,3 @@
-
 import "./style.css";
 import * as THREE from "three";
 import * as dat from "dat.gui";
@@ -10,10 +9,7 @@ import { loadBallTextures } from "./src/config/BallTextures";
 
 import { loadModels } from "./src/config/Models.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-/*
-import flagVertexShader from "./src/shaders/FlagSheders/vertex.glsl";
-import flagFragmentShader from "./src/shaders/FlagSheders/fragment.glsl";
-*/
+
 import World from "./src/physics/world.js";
 import Ball from "./src/physics/ball.js";
 import vector from "./src/physics/vector.js";
@@ -109,7 +105,6 @@ const paramters = {
 };
 
 // Physics World
-// ================================
 
 const world = new World(GRAVITY, HEIGHT, TEMPERETURE, WIND_SPEED, WIND_ANGLE);
 worldfolder
@@ -130,7 +125,6 @@ worldfolder
   .name("Wind Angle")
   .onChange(() => {
     world.wind_angle = paramters.windAngle
-    ////////////////////////////////////////////
     /*
     rotateAboutPoint(
       flag,
@@ -274,7 +268,6 @@ scene.add(rightWall);
 });
 
 // بوصلة
-
 // مجموعة السهم
 const compassScene = new THREE.Scene();
 const compassCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 1, 1000);
@@ -337,7 +330,7 @@ compassArrow.add(base);
 compassArrow.position.y = 0;
 compassScene.add(compassArrow);
 
-// ==================== تحديث السهم مع الرياح ====================
+// تحديث السهم مع الرياح 
 const updateCompassArrow = () => {
   const targetRotation = -world.wind_angle;
   // حركة سلسة نحو زاوية الرياح
@@ -348,10 +341,7 @@ const updateCompassArrow = () => {
 const gltfLoader = new GLTFLoader();
 loadModels(scene, gltfLoader, intersectObjects, movingTargets);
 
-///////////////////////////////////////////////
-
 // Lights
-
 // Ambient light
 const ambientLight = new THREE.AmbientLight("#9ca5b5ff", 0.75);
 scene.add(ambientLight);
@@ -365,25 +355,13 @@ scene.add(moonLight);
 
 
 //////////////////////////////////////////camera and resize  ////////////////////////////////////////////
+
 // Sizes
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-/*
-window.onload = () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-};
-*/
 // Camera
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -405,9 +383,9 @@ const audioLoader = new THREE.AudioLoader();
 
 audioLoader.load('static/sounds/Captain-Jack-Sparrow-theme-music.m4a', function(buffer) {
     backgroundSound.setBuffer(buffer);
-    backgroundSound.setLoop(true);      // تكرار الصوت
-    backgroundSound.setVolume(0.5);     // مستوى الصوت (0 = صامت، 1 = أقصى)
-//    backgroundSound.play();             // تشغيل الصوت
+    backgroundSound.setLoop(true);      
+    backgroundSound.setVolume(0.5);  
+    backgroundSound.play();            
 });
 audioLoader.load("static/sounds/CANNON-SOUND-EFFECT-HD-FOR-VIDEOS-and-GAMES.m4a", (audioBuffer) => {
  shootingSoundEffect.setBuffer(audioBuffer);
@@ -417,28 +395,9 @@ const shootingSoundEffect = new THREE.Audio(listener);
 shootingSoundEffect.setVolume(1);
 scene.add(shootingSoundEffect);
 
-
-/*
-    Game Screen
-
-const numberofBallsWidget = document.querySelector(".cannonBallsNumber");
-numberofBallsWidget.innerHTML = numberOfBalls;
-
-const scoreWidget = document.querySelector(".ScoreNumber");
-scoreWidget.innerHTML = score;
-
-const targetWidget = document.querySelector(".targetNumbers");
-targetWidget.innerHTML = numberOfTargets;
-
-const gameFinshed = document.querySelector(".gameFinshedLayout");
-
-const playAgain = document.querySelector(".playAgain");
-*/
-
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
@@ -615,6 +574,7 @@ const removeBallsGreaterThanOne = () => {
 //
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
+
 /*
     Reycaster
 */
@@ -797,7 +757,7 @@ const tick = () => {
       }
     }
 
-    // ✅ إزالة الكرة خارج الحدود
+    // إزالة الكرة خارج الحدود
     if (Math.abs(cannonBall.position.x) > 1000 || Math.abs(cannonBall.position.z) > 1000 || cannonBall.position.y < -50) {
       scene.remove(cannonBall);
       objectsToUpdate.splice(i,1);
@@ -805,34 +765,25 @@ const tick = () => {
     }
   }
 
-  // 3️⃣ تحريك الأهداف المتحركة
+  // تحريك الأهداف المتحركة
   movingTargets.forEach(target => {
     target.position.x += target.userData.direction * target.userData.speed;
     if (target.position.x > 200/*target.userData.startX + target.userData.range*/) target.userData.direction = -1;
     if (target.position.x < -200/* target.userData.startX - target.userData.range*/) target.userData.direction = 1;
   });
 
-  // 4️⃣ تحديث المدفع
+  // تحديث المدفع
   if (cannon?.isReady) cannon.update(mouse);
 
-  // 5️⃣ تحديث السهم / البوصلة
+  // تحديث البوصلة
   updateCompassArrow();
 
-  // 6️⃣ رندر المشهد الأساسي
+  // رندر المشهد الأساسي
   renderer.setViewport(0,0,sizes.width,sizes.height);
   renderer.setScissorTest(false);
   renderer.render(scene, camera);
 
-/*
-// 4) ارسم مشهد البوصلة
-renderer.render(compassScene, compassCamera);
-
-// 5) رجّع الإعدادات للوضع الطبيعي (مهم جداً)
-renderer.setScissorTest(false);
-renderer.setViewport(0, 0, sizes.width, sizes.height);
-*/
-
-  // 7️⃣ رندر البوصلة فوق المشهد
+  // رندر البوصلة فوق المشهد
   renderer.clearDepth();
   renderer.setScissorTest(true);
   renderer.setScissor(20,20,120,120);
@@ -842,9 +793,7 @@ renderer.setViewport(0, 0, sizes.width, sizes.height);
   renderer.setScissorTest(false);
   renderer.setViewport(0,0,sizes.width,sizes.height);
 
-
   requestAnimationFrame(tick);
-
 };
 
 tick();
