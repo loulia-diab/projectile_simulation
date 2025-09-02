@@ -15,22 +15,28 @@
 <body>
     <canvas class="webgl"></canvas>
 
-    <div class="loading-bar-container">
-        <div class="loading-bar"></div>
-    </div>
-    
-    <div class="game-info">
-        <div>Score: <span class="ScoreNumber">0</span></div>
-        <div>Balls: <span class="cannonBallsNumber">20</span></div>
-        <div>Targets: <span class="targetNumbers">7</span></div>
-    </div>
+<style>
+/* صلح عرض النصوص داخل dat.GUI */
+.dg .cr .property-name {
+  width: 40% !important;   /* خليه ياخد تقريباً نص العرض */
+  text-align: left !important;
+  white-space: normal !important;
+}
 
-    <div class="screenInfo">اضغط بالماوس لإطلاق القذيفة</div>
+/* تحكم بعرض خانة إدخال الأرقام */
+.dg .cr.number input[type="text"] {
+  width: 40px !important;   /* عرض صندوق الرقم */
+  margin-left: 5px !important;
+}
 
-    <div class="gameFinshedLayout hide">
-        <h1 class="status"></h1>
-        <button class="playAgain">Play Again</button>
-    </div>
+/* خليه يعطي مساحة للـ slider */
+.dg .c input[type="range"] {
+  display: inline-block !important;
+  width: 40% !important;   /* أعطيه مساحة كافية ليبين */
+}
+
+
+</style>
 
     <script type="module" src="./main.js"></script>
 </body>
