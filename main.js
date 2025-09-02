@@ -330,10 +330,19 @@ compassArrow.add(base);
 compassArrow.position.y = 0;
 compassScene.add(compassArrow);
 
-// تحديث السهم مع الرياح 
 const updateCompassArrow = () => {
-  const targetRotation = -world.wind_angle;
-  // حركة سلسة نحو زاوية الرياح
+  let targetRotation = -world.wind_angle - Math.PI / 2;
+
+  // حساب الزاوية بالدرجات لسهولة الشرط
+  const angleDeg = (world.wind_angle * 180) / Math.PI;
+  const normalized = ((angleDeg % 360) + 360) % 360; // تحويل للمدى [0..360]
+
+  // إذا الاتجاه للأمام (90 ±45) أو للخلف (270 ±45) → قلب 180°
+  if ((normalized >= 45 && normalized <= 135) || (normalized >= 225 && normalized <= 315)) {
+    targetRotation += Math.PI;
+  }
+
+  // حركة سلسة
   compassArrow.rotation.z += (targetRotation - compassArrow.rotation.z) * 0.1;
 };
 

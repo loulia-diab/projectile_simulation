@@ -24,6 +24,15 @@ body
   box-sizing: border-box;
 }
 
+.dg .c .slider {
+  direction: ltr !important;      /* خلي السلايدر من اليسار لليمين */
+}
+
+.dg .c .slider-fg {
+  right: auto !important;         /* شيل التثبيت من اليمين */
+  left: 0 !important;             /* خلّي الزيادة تبدا من اليسار */
+}
+
 html,
 body {
   overflow: hidden;
