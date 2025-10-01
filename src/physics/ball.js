@@ -318,7 +318,7 @@ class Ball {
   
   bouncing() {
 
-    // 🔹 أولاً: تحقق إذا الكرة على الخشب أو بالماء
+  // Determining ball's position 
   const deckHalfX = 600 / 2;
   const deckHalfZ = 1000 / 2;
   const deckY = -5;
@@ -331,15 +331,15 @@ class Ball {
     this.position.z < deckHalfZ;
 
   if (!isOnDeck) {
-    // الكرة بالماء
+    // in water
     if (this.position.y <= waterY + this.raduis) {
       if (this.type == 2) {
-        // فولاذ → يغرق
+        
         this.velocity._x = 0;
         this.velocity._z = 0;
-        this.velocity._y = -1; // نزول تدريجي
+        this.velocity._y = -1; 
       } else {
-         // خشب أو غيره → يطفو فوق سطح الماء
+ 
     const floatLevel = waterY + this.raduis;
 
     if (this.position.y <= floatLevel) {
@@ -349,16 +349,10 @@ class Ball {
       this.velocity._y = 0;
       this.rolling = false;
     }
-        /*
-        // خشب أو غيره → يطفو
-        this.position.y = waterY + this.raduis;
-        this.velocity._x = 0;
-        this.velocity._z = 0;
-        this.velocity._y = 0;
-        this.rolling = false;*/
+    
       }
     }
-    return; // ✅ نوقف وما نكمل كود الأرض
+    return; 
   }
 
     let ground = 3.0;

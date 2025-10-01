@@ -1,4 +1,3 @@
-// config/WoodTextures.js
 import * as THREE from "three";
 
 const loadWoodTextures = (textureLoader) => {
@@ -9,7 +8,6 @@ const loadWoodTextures = (textureLoader) => {
   const woodRoughnessTexture = textureLoader.load("static/textures/textures/woodFloor/WoodFloor043_1K-JPG_Roughness.jpg");
   const woodHeightTexture = textureLoader.load("static/textures/textures/woodFloor/WoodFloor043_1K-JPG_Displacement.jpg");
 
-  // تكرار الخامة
   const repeatCount = 8;
   [
     woodColorTexture,

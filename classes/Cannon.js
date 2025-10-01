@@ -25,9 +25,9 @@ class Cannon {
             }
         });
 
-        // ⚡️ إنشاء dummy object للفوهة
+        
         this.muzzle = new THREE.Object3D();
-        this.muzzle.position.set(-88, 0, 50); // مكان الفوهة داخل الموديل
+        this.muzzle.position.set(-88, 0, 50); 
         this.mesh.add(this.muzzle);
 
         // Placeholder ball
@@ -64,7 +64,7 @@ class Cannon {
         );
         this.ballMesh.castShadow = true;
         this.muzzle.add(this.ballMesh);
-        this.ballMesh.position.set(0, 0, 0); // مباشرة عند الفوهة
+        this.ballMesh.position.set(0, 0, 0); 
     }
 
     getBallPosition() {
@@ -73,26 +73,14 @@ class Cannon {
         return worldPos;
     }
     
-/*
-    getDirection() {
-        const localForward = new THREE.Vector3(1, 0, 0); // Z للأمام
-        this.muzzle.updateMatrixWorld(true);
-        const worldDir = localForward.clone().transformDirection(this.muzzle.matrixWorld);
-       // return worldDir.normalize();
-       // ✅ عكس المحاور حسب الحاجة
-    const correctedDir = new THREE.Vector3(-worldDir.x, worldDir.y, worldDir.z);
 
-    return correctedDir; // هاد اللي رح تستخدمه للإطلاق والسهم
-}
-    */
    getDirection() {
-    const localForward = new THREE.Vector3(1, 0, 0); // جرب المحاور واحد واحد
+    const localForward = new THREE.Vector3(1, 0, 0); 
     this.muzzle.updateMatrixWorld(true);
     const worldDir = localForward.clone().transformDirection(this.muzzle.matrixWorld);
    return worldDir.negate().normalize();
 
 }
-
 
     recoil() {
         if (!this.group) return;
@@ -112,23 +100,15 @@ class Cannon {
 
     update(mouse) {
         if (!this.isReady) return;
-        const normalizedX = (mouse.x / window.innerWidth) * 2 - 1; // -1 أقصى يسار، 1 أقصى يمين
-const normalizedY = -((mouse.y / window.innerHeight) * 2 - 1); // -1 أعلى، 1 أسفل
+        const normalizedX = (mouse.x / window.innerWidth) * 2 - 1; 
+const normalizedY = -((mouse.y / window.innerHeight) * 2 - 1); 
 
 this.mesh.rotation.z = -mouse.x * Math.PI / 6;
 this.mesh.rotation.y = mouse.y * Math.PI / 6;
 
-
-        // تحديث الاتجاه للـ ArrowHelper
         const dir = this.getDirection();
         this.arrowHelper.setDirection(dir);
         this.arrowHelper.position.copy(this.getBallPosition());
-/*
-        // Debug: اطبع الإحداثيات
-        console.log("مدفع:", this.mesh.getWorldPosition(new THREE.Vector3()));
-        console.log("فوهة:", this.getBallPosition());
-        console.log("اتجاه:", dir);
-        */
     }
 }
 

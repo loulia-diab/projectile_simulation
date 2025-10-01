@@ -25,12 +25,12 @@ body
 }
 
 .dg .c .slider {
-  direction: ltr !important;      /* خلي السلايدر من اليسار لليمين */
+  direction: ltr !important;      
 }
 
 .dg .c .slider-fg {
-  right: auto !important;         /* شيل التثبيت من اليمين */
-  left: 0 !important;             /* خلّي الزيادة تبدا من اليسار */
+  right: auto !important;         
+  left: 0 !important;             
 }
 
 html,

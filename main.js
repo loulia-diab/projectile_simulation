@@ -1,7 +1,7 @@
 import "./style.css";
 import * as THREE from "three";
 import * as dat from "dat.gui";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //اداة لتدوير وتحريك الكااميرا بالماوس
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; 
 import Cannon from './classes/Cannon';
 import loadWoodTextures from "./src/config/WoodTextures";
 import loadWaterTextures from "./src/config/WaterTextures";
@@ -44,12 +44,12 @@ const HEIGHT = 0,
 const WIND_SPEED = 10,
   WIND_ANGLE = Math.PI / 2;
 const mouse = { x: 0,
-   y: 0 }; ////////////////////
+   y: 0 }; 
 const intersectObjects = [];
-const movingTargets = []; // نخزن فيه الأهداف المتحركة
+const movingTargets = []; 
 
 window.addEventListener("mousemove", (e) => {
-  // تحويل الإحداثيات من -1 إلى 1
+ 
   mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 });
@@ -191,7 +191,7 @@ paramters.types.default();
 // Scene
 const scene = new THREE.Scene();
 
-// سطح السفينة الخشبي
+// ship
 const deck = new THREE.Mesh(
   new THREE.PlaneGeometry(600, 1000, 10, 10),
   new THREE.MeshStandardMaterial({
@@ -208,7 +208,7 @@ deck.position.y = -5;
 deck.receiveShadow = true;
 scene.add(deck);
 
-// الماء حول السفينة
+// water
 
 const water = new THREE.Mesh(
   new THREE.PlaneGeometry(4000, 4000, 10, 10),
@@ -221,10 +221,10 @@ const water = new THREE.Mesh(
   })
 );
 water.rotation.x = -Math.PI / 2;
-water.position.y = -6; // تحت سطح السفينة قليلاً
+water.position.y = -6; 
 scene.add(water);
 
-// سور السفينة
+// fence
 const wallHeight = 30;
 const wallThickness = 2;
 const wallMaterial = new THREE.MeshStandardMaterial({
@@ -262,13 +262,12 @@ scene.add(rightWall);
   w.userData.isWall = true;
   w.updateMatrixWorld(true);
   w.userData.box = new THREE.Box3().setFromObject(w);
-  // expand قليلاً ليغطي أي سماكة صغرى أو تحريكات طفيفة:
   w.userData.box.expandByScalar(0.05);
   intersectObjects.push(w);
 });
 
-// بوصلة
-// مجموعة السهم
+
+// Arrowe
 const compassScene = new THREE.Scene();
 const compassCamera = new THREE.OrthographicCamera(-50, 50, 50, -50, 1, 1000);
 compassCamera.position.set(0, 0, 100);
@@ -291,7 +290,7 @@ compassScene.add(compassBackground);
 
 const compassArrow = new THREE.Group();
 
-// جسم السهم (العمود)
+
 const shaftGeometry = new THREE.CylinderGeometry(2, 2, 30, 16);
 const shaftMaterial = new THREE.MeshStandardMaterial({
   color: 0xff0000,
@@ -300,10 +299,10 @@ const shaftMaterial = new THREE.MeshStandardMaterial({
 });
 const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
 shaft.castShadow = true;
-shaft.position.y = 15; // منتصف السهم
+shaft.position.y = 15; 
 compassArrow.add(shaft);
 
-// رأس السهم (المؤشر)
+
 const headGeometry = new THREE.ConeGeometry(5, 15, 32);
 const headMaterial = new THREE.MeshStandardMaterial({
   color: 0xff0000,
@@ -312,10 +311,9 @@ const headMaterial = new THREE.MeshStandardMaterial({
 });
 const head = new THREE.Mesh(headGeometry, headMaterial);
 head.castShadow = true;
-head.position.y = 37.5; // أعلى العمود
+head.position.y = 37.5; 
 compassArrow.add(head);
 
-// قاعدة صغيرة للسهم لإحساس بالعمق
 const baseGeometry = new THREE.CylinderGeometry(3, 3, 5, 16);
 const baseMaterial = new THREE.MeshStandardMaterial({
   color: 0x333333,
@@ -326,23 +324,20 @@ const base = new THREE.Mesh(baseGeometry, baseMaterial);
 base.position.y = 2.5; 
 compassArrow.add(base);
 
-// ضع السهم داخل مشهد البوصلة
+
 compassArrow.position.y = 0;
 compassScene.add(compassArrow);
 
 const updateCompassArrow = () => {
   let targetRotation = -world.wind_angle - Math.PI / 2;
 
-  // حساب الزاوية بالدرجات لسهولة الشرط
   const angleDeg = (world.wind_angle * 180) / Math.PI;
-  const normalized = ((angleDeg % 360) + 360) % 360; // تحويل للمدى [0..360]
+  const normalized = ((angleDeg % 360) + 360) % 360; 
 
-  // إذا الاتجاه للأمام (90 ±45) أو للخلف (270 ±45) → قلب 180°
   if ((normalized >= 45 && normalized <= 135) || (normalized >= 225 && normalized <= 315)) {
     targetRotation += Math.PI;
   }
 
-  // حركة سلسة
   compassArrow.rotation.z += (targetRotation - compassArrow.rotation.z) * 0.1;
 };
 
@@ -436,11 +431,9 @@ window.addEventListener("resize", () => {
 });
 
 
-//renderer.setClearColor("#4682B4"); // steel blue
 /*
     Configure Scene
 */
-//scene.fog = new THREE.Fog(0xcce0ff, 1300, 1600);
 const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_48d_partly_cloudy_puresky.png", () => {
   const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
   rt.fromEquirectangularTexture(renderer, texture);
@@ -449,11 +442,9 @@ const texture = textureLoader.load("static/textures/textures/skybox/kloofendal_4
 
 
 ////////////////////////////////////  Model   //////////////////////////////////////////////
-
-// في المركز اظهار المحاورs
 var axesHelper = new THREE.AxesHelper(500);
 //scene.add(axesHelper);
-///////////////////////////////////
+
 window.onload = () => {
 
    // Update sizes
@@ -494,7 +485,6 @@ const createCannonBall = () => {
   //removeBallsGreaterThanOne();
   removeAllBalls();
 
-  // الشكل المرئي للطابة
   let cannonBall = new THREE.Mesh(
     new THREE.SphereGeometry(paramters.radius * 5, 32, 32),
      new THREE.MeshStandardMaterial({
@@ -519,13 +509,12 @@ const createCannonBall = () => {
   scene.add(axesHelper);
 
   
-  // فيزياء الطابة
+  // ball physics
   const angular_speed = vector.create(
     paramters.angular_speedX,
     paramters.angular_speedY,
     paramters.angular_speedZ
   );
-  // خذ موقع فوهة الطابة العالمي
  
     const ballDirection = cannon.getDirection();
     const ballStartPos = cannon.getBallPosition();
@@ -535,8 +524,8 @@ const createCannonBall = () => {
 
 
 let physicsBall = new Ball(
-    ballStartPos,                // موقع الطابة
-    paramters.speed, // السرعة الابتدائية
+    ballStartPos,                
+    paramters.speed, 
         angleXY,
         angleXZ,
     paramters.radius,
@@ -552,47 +541,30 @@ let physicsBall = new Ball(
   objectsToUpdate.push({ cannonBall, physicsBall });
   intersectObjects.push(cannonBall);
   
- // حساب نصف القطر المرئي للطابة (نحتاجه في اختبارات الـ Sphere)
+
 const displayScale = 3;
 cannonBall.scale.set(displayScale, displayScale, displayScale);
-cannonBall.userData.visualRadius = (paramters.radius * 5) * displayScale; // paramters.radius*5 هو radius geometry
-
+cannonBall.userData.visualRadius = (paramters.radius * 5) * displayScale;
 };
 const removeAllBalls = () => {
   if (objectsToUpdate.length > 0) {
     for (let i = 0; i < objectsToUpdate.length; i++) {
       const ball = objectsToUpdate[i];
       scene.remove(ball.cannonBall);
-      //  من مصفوفة التقاطعات
+
       const idx = intersectObjects.indexOf(ball.cannonBall);
       if (idx > -1) intersectObjects.splice(idx, 1);
 
-      // تحرير الذاكرة
       ball.cannonBall.geometry.dispose();
       ball.cannonBall.material.dispose();
-      // من عالم الفيزياء
+
       world.remove(ball.physicsBall);
     }
-    // فضي المصفوفة
+  
     objectsToUpdate = [];
   }
 };
 
-/*
-const removeBallsGreaterThanOne = () => {
-  if (objectsToUpdate.length >= 1) {
-    objectsToUpdate.forEach((e) => {
-      scene.remove(e.cannonBall);
-      e.cannonBall.material.dispose();
-      e.cannonBall.geometry.dispose();
-      intersectObjects = intersectObjects.filter((i) => i !== e.cannonBall);
-      world.remove(e.physicsBall);
-    });
-    objectsToUpdate = [];
-  }
-};*/
-
-//
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
 
@@ -665,19 +637,15 @@ const tick = () => {
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
-  // 1️⃣ تحديث الفيزياء
   world.update(deltaTime);
 
-  // 2️⃣ تحريك الطابات + collision handling
   for (let i = objectsToUpdate.length - 1; i >= 0; i--) {
     const object = objectsToUpdate[i];
     const { cannonBall, physicsBall } = object;
 
-    // مزامنة موضع ودوارن الطابة
     cannonBall.position.copy(physicsBall.position);
     cannonBall.quaternion.copy(physicsBall.quaternion);
 
-    // axesHelper (اختياري)
     if (axesHelper) {
       axesHelper.position.copy(cannonBall.position);
       axesHelper.quaternion.copy(cannonBall.quaternion);
@@ -697,25 +665,24 @@ const tick = () => {
 
     let collided = false;
 
-    // ✅ 1) Sphere vs Box3 collision
+    // Sphere vs Box3 collision
     for (const obj of objectsToTest) {
       obj.updateMatrixWorld(true);
       if (!obj.userData.box) obj.userData.box = new THREE.Box3().setFromObject(obj);
       else obj.userData.box.setFromObject(obj);
-      obj.userData.box.expandByScalar(0.02); // هامش أمان للجدران الرفيعة
+      obj.userData.box.expandByScalar(0.02);
 
       if (sphere.intersectsBox(obj.userData.box)) {
         const collisionPoint = new THREE.Vector3();
         obj.userData.box.clampPoint(cannonBall.position, collisionPoint);
 
-        // حساب normal من نقطة الاصطدام لمركز الكرة
         const normalVec = cannonBall.position.clone().sub(collisionPoint);
         if (normalVec.lengthSq() < 1e-6) {
           if (velocityVec.lengthSq() > 1e-6) normalVec.copy(velocityVec).normalize().negate();
           else normalVec.set(0, 1, 0);
         } else normalVec.normalize();
 
-        // تعديل y لتحديد branch الصحيح
+  
         const absX = Math.abs(normalVec.x);
         const absY = Math.abs(normalVec.y);
         const absZ = Math.abs(normalVec.z);
@@ -754,7 +721,7 @@ const tick = () => {
           intersect.face = { normal: intersect.point.clone().sub(center).normalize() };
         }
 
-        // تعديل normal كما في Box3
+      
         const normalVec = cannonBall.position.clone().sub(intersect.point);
         if (normalVec.lengthSq() < 1e-6) {
           if (velocityVec.lengthSq() > 1e-6) normalVec.copy(velocityVec).normalize().negate();
@@ -777,8 +744,7 @@ const tick = () => {
         break;
       }
     }
-
-    // إزالة الكرة خارج الحدود
+  
     if (Math.abs(cannonBall.position.x) > 1000 || Math.abs(cannonBall.position.z) > 1000 || cannonBall.position.y < -50) {
       scene.remove(cannonBall);
       objectsToUpdate.splice(i,1);
@@ -786,25 +752,20 @@ const tick = () => {
     }
   }
 
-  // تحريك الأهداف المتحركة
   movingTargets.forEach(target => {
     target.position.x += target.userData.direction * target.userData.speed;
     if (target.position.x > 200/*target.userData.startX + target.userData.range*/) target.userData.direction = -1;
     if (target.position.x < -200/* target.userData.startX - target.userData.range*/) target.userData.direction = 1;
   });
 
-  // تحديث المدفع
-  if (cannon?.isReady) cannon.update(mouse);
 
-  // تحديث البوصلة
+  if (cannon?.isReady) cannon.update(mouse);
   updateCompassArrow();
 
-  // رندر المشهد الأساسي
   renderer.setViewport(0,0,sizes.width,sizes.height);
   renderer.setScissorTest(false);
   renderer.render(scene, camera);
 
-  // رندر البوصلة فوق المشهد
   renderer.clearDepth();
   renderer.setScissorTest(true);
   renderer.setScissor(20,20,120,120);
